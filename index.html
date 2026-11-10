@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>幾何動點軌跡 - 互動探索實驗室 (V13 解鎖拉桿固定寬度抗抖動版)</title>
+<title>幾何動點軌跡 - 互動探索實驗室 (V14 軌跡精準收斂與副標題定值版)</title>
 <style>
   :root {
     --bg-color: #0b1120;
@@ -581,7 +581,7 @@
 <header>
   <div class="title-group">
     <h1>幾何動點軌跡探索實驗室</h1>
-    <p>拖曳動點 P，尋找所有滿足「PA / PB = k」的未知神秘曲線</p>
+    <p>拖曳動點 P，尋找所有滿足「PA / PB = 定值」的未知神秘曲線</p>
   </div>
 </header>
 
@@ -1190,8 +1190,9 @@
     const distPA = Math.hypot(mathP.x - mathA.x, mathP.y - mathA.y);
     const distPB = Math.hypot(mathP.x - mathB.x, mathP.y - mathB.y);
 
-    // 命中判定：交叉相乘精度判定 |PA * n - PB * m| < 容許值
-    const isHit = Math.abs(distPA * targetN - distPB * targetM) < 0.16 * Math.max(1, (distPA + distPB) / 2);
+    // 命中判定：全域相對誤差嚴格對齊 (根絕右側膨脹導致多重虛影與軌跡發散)
+    const currentRatio = distPB > 0.0001 ? (distPA / distPB) : 999;
+    const isHit = Math.abs(currentRatio - targetK) < (targetK < 1 ? 0.04 * targetK : 0.045);
 
     // 命中自動留痕
     if (chkAutoStamp.checked && isHit) {
@@ -1426,14 +1427,14 @@
 
         if (locus.isLine) {
           const screenLineX = toScreenX(locus.lineX);
-          if (Math.abs(pos.x - screenLineX) < 18) {
+          if (Math.abs(pos.x - screenLineX) < 26) {
             mx = locus.lineX;
           }
         } else {
           const screenCenter = toScreen(locus.ox, locus.oy);
           const screenRadius = locus.r * SCALE;
           const distToCenter = Math.hypot(pos.x - screenCenter.x, pos.y - screenCenter.y);
-          if (Math.abs(distToCenter - screenRadius) < 18 && distToCenter > 1) {
+          if (Math.abs(distToCenter - screenRadius) < 26 && distToCenter > 1) {
             const angle = Math.atan2(pos.y - screenCenter.y, pos.x - screenCenter.x);
             const snappedSx = screenCenter.x + Math.cos(angle) * screenRadius;
             const snappedSy = screenCenter.y + Math.sin(angle) * screenRadius;
