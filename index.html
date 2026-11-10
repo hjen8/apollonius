@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>幾何動點軌跡 - 互動探索實驗室 (V6 行動全響應版)</title>
+<title>幾何動點軌跡 - 互動探索實驗室 (V7 緊湊任務膠囊版)</title>
 <style>
   :root {
     --bg-color: #0b1120;
@@ -274,8 +274,12 @@
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
+    white-space: nowrap;
+    gap: 8px;
   }
   .hint-header strong { color: #fbbf24; font-weight: 800; }
+  .hint-title-full { white-space: nowrap; }
+  .hint-title-short { display: none; white-space: nowrap; }
   .hint-toggle-btn {
     background: #334155;
     color: #94a3b8;
@@ -288,15 +292,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 10px;
+    margin-left: 6px;
+    flex-shrink: 0;
   }
   .hint-toggle-btn:hover { background: #475569; color: #fff; }
   #hint-overlay.collapsed {
-    padding: 6px 14px;
+    padding: 5px 12px;
     border-radius: 20px;
-    max-width: 140px;
-    background: rgba(30, 41, 59, 0.88);
+    max-width: fit-content;
+    width: auto;
+    background: rgba(30, 41, 59, 0.90);
+    white-space: nowrap;
   }
+  #hint-overlay.collapsed .hint-title-full { display: none; }
+  #hint-overlay.collapsed .hint-title-short { display: inline-flex; align-items: center; gap: 4px; }
   #hint-overlay.collapsed .hint-content { display: none; }
   #hint-overlay.collapsed .hint-toggle-btn { transform: rotate(45deg); }
 
@@ -359,7 +368,7 @@
       font-size: 0.82rem;
       padding: 8px 12px;
     }
-    #hint-overlay.collapsed { max-width: 110px; padding: 4px 10px; }
+    #hint-overlay.collapsed { max-width: fit-content; width: auto; padding: 4px 10px; }
 
     .canvas-floating-controls {
       top: 86px;
@@ -415,7 +424,8 @@
   <!-- 可收合的任務說明框 -->
   <div id="hint-overlay">
     <div class="hint-header" id="hint-header">
-      <span>💡 <strong>探索任務</strong></span>
+      <span class="hint-title-full">💡 <strong>探索任務</strong></span>
+      <span class="hint-title-short">💡 <strong>任務</strong></span>
       <button id="btn-toggle-hint" class="hint-toggle-btn" title="收合說明">✕</button>
     </div>
     <div id="hint-content" class="hint-content">
