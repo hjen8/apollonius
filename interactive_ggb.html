@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平面動點軌跡 - 幾何互動探索實驗室</title>
+<style>
+  :root {
+    --bg-color: #0b1120;
+    --panel-bg: rgba(15, 23, 42, 0.90);
+    --border-color: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --color-a: #38bdf8;
+    --color-b: #f87171;
+    --color-p: #fbbf24;
+    --color-match: #4ade80;
+    --color-circle: #fb923c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  header {
+    padding: 10px 24px;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    z-index: 10;
+  }
+
+  .title-group h1 { font-size: 1.15rem; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+  .title-group p { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; }
+
+  /* 比例動態控制台 */
+  .ratio-controller {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #1e293b;
+    padding: 6px 16px;
+    border-radius: 30px;
+    border: 1px solid #334155;
+  }
+  .ratio-controller label { font-size: 0.85rem; font-weight: 600; color: #cbd5e1; }
+  .ratio-btn-group { display: flex; gap: 4px; }
+  .ratio-btn {
+    background: #334155;
+    color: #f1f5f9;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .ratio-btn:hover { background: #475569; }
+  .ratio-btn.active { background: #3b82f6; color: #fff; box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); }
+  
+  .ratio-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 6px;
+    border-left: 1px solid #334155;
+    padding-left: 12px;
+  }
+  .ratio-slider {
+    width: 90px;
+    cursor: pointer;
+    accent-color: #3b82f6;
+  }
+  #val-target-ratio {
+    font-family: monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #38bdf8;
+    min-width: 48px;
+  }
+
+  #main-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+  }
+
+  #toolbar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-bg);
+    padding: 8px 18px;
+    border-radius: 40px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(14px);
+    z-index: 10;
+  }
+
+  .btn {
+    background: #334155;
+    color: #f1f5f9;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn:hover { background: #475569; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.active { background: #2563eb; color: #fff; box-shadow: 0 0 10px rgba(37, 99, 235, 0.6); }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0 6px;
+  }
+  .checkbox-label input { cursor: pointer; accent-color: #3b82f6; }
+
+  #hint-overlay {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid var(--border-color);
+    padding: 12px 18px;
+    border-radius: 10px;
+    max-width: 320px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+  }
+  #hint-overlay strong { color: #fbbf24; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-group">
+    <h1>幾何動點軌跡探索實驗室</h1>
+    <p>尋找所有滿足「PA : PB = k : 1」的未知神秘曲線</p>
+  </div>
+  
+  <!-- 比例動態控制台 -->
+  <div class="ratio-controller">
+    <label>目標比例 (k) :</label>
+    <div class="ratio-btn-group">
+      <button class="ratio-btn active" data-ratio="2">2 : 1</button>
+      <button class="ratio-btn" data-ratio="3">3 : 1</button>
+      <button class="ratio-btn" data-ratio="4">4 : 1</button>
+      <button class="ratio-btn" data-ratio="0.5">1 : 2</button>
+      <button class="ratio-btn" data-ratio="1">1 : 1</button>
+    </div>
+    <div class="ratio-slider-container">
+      <input type="range" id="ratio-slider" class="ratio-slider" min="0.3" max="5.0" step="0.1" value="2.0">
+      <span id="val-target-ratio">2.0 : 1</span>
+    </div>
+  </div>
+</header>
+
+<div id="main-container">
+  <canvas id="canvas"></canvas>
+
+  <div id="hint-overlay">
+    💡 <strong>探索任務</strong>：<br>
+    用滑鼠按住黃色動點 <strong>P</strong> 拖曳漫遊。<br>
+    長度與比值已<strong>直接浮動在動點 P 兩側與正上方</strong>！<br>
+    當比值進入目標時，正上方標籤會爆發亮綠色並留下純淨軌跡。在各方向繞一圈，猜猜看所有綠點最後會拼出什麼形狀？
+  </div>
+
+  <div id="toolbar">
+    <label class="checkbox-label">
+      <input type="checkbox" id="chk-auto-stamp" checked> 命中自動留痕
+    </label>
+    <label class="checkbox-label" title="消除滑鼠手震散斑，使落點平滑對齊">
+      <input type="checkbox" id="chk-snap" checked> 幾何精密吸附 (防散斑)
+    </label>
+    <button class="btn" id="btn-scan">⚡ 密集掃描全軌跡</button>
+    <button class="btn" id="btn-toggle-circle">⭕ 揭曉理論軌跡</button>
+    <button class="btn" id="btn-clear" style="background:#7f1d1d;">🗑️ 清空足跡</button>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const ratioButtons = document.querySelectorAll(".ratio-btn");
+  const ratioSlider = document.getElementById("ratio-slider");
+  const valTargetRatio = document.getElementById("val-target-ratio");
+
+  const chkAutoStamp = document.getElementById("chk-auto-stamp");
+  const chkSnap = document.getElementById("chk-snap");
+  const btnScan = document.getElementById("btn-scan");
+  const btnToggleCircle = document.getElementById("btn-toggle-circle");
+  const btnClear = document.getElementById("btn-clear");
+
+  let width, height, originX, originY;
+  const SCALE = 70; // 1 單位 = 70px
+
+  // 定點 A(-2.5, 0), B(0.5, 0)
+  const mathA = { x: -2.5, y: 0 };
+  const mathB = { x: 0.5, y: 0 };
+  
+  // 動態目標比值 k
+  let targetK = 2.0;
+
+  // 動點 P (初始位置)
+  let mathP = { x: 0.5, y: 1.2 };
+  let isDragging = false;
+  
+  // 紀錄命中點痕跡
+  let stampedPoints = [];
+  let showTrueCircle = false;
+
+  function resize() {
+    width = canvas.width = canvas.parentElement.clientWidth;
+    height = canvas.height = canvas.parentElement.clientHeight;
+    originX = width / 2;
+    originY = height / 2;
+    draw();
+  }
+  window.addEventListener("resize", resize);
+
+  function toScreen(mathPt) {
+    return {
+      x: originX + mathPt.x * SCALE,
+      y: originY - mathPt.y * SCALE
+    };
+  }
+
+  function toMath(screenPt) {
+    return {
+      x: (screenPt.x - originX) / SCALE,
+      y: (originY - screenPt.y) / SCALE
+    };
+  }
+
+  function dist(p1, p2) {
+    return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+  }
+
+  // 計算理論軌跡參數 (圓心與半徑)
+  function getTheoreticalLocus(k) {
+    if (Math.abs(k - 1.0) < 0.001) {
+      // k = 1: 垂直平分線 (直線)
+      return { isLine: true, xMid: (mathA.x + mathB.x) / 2 };
+    }
+    // 內分點 C = (A + k*B) / (1 + k)
+    const cx = (mathA.x + k * mathB.x) / (1 + k);
+    // 外分點 D = (k*B - A) / (k - 1)
+    const dx = (k * mathB.x - mathA.x) / (k - 1);
+    
+    const centerX = (cx + dx) / 2;
+    const radius = Math.abs(dx - cx) / 2;
+    return {
+      isLine: false,
+      centerX: centerX,
+      centerY: 0,
+      radius: radius,
+      ptC: { x: cx, y: 0 },
+      ptD: { x: dx, y: 0 }
+    };
+  }
+
+  // 設定目標比例
+  function setTargetRatio(newK) {
+    targetK = Math.round(newK * 10) / 10;
+    valTargetRatio.textContent = `${targetK.toFixed(1)} : 1`;
+    ratioSlider.value = targetK;
+
+    ratioButtons.forEach(btn => {
+      const bK = parseFloat(btn.dataset.ratio);
+      btn.classList.toggle("active", Math.abs(bK - targetK) < 0.05);
+    });
+
+    stampedPoints = []; // 切換比例時清空舊足跡
+    draw();
+  }
+
+  ratioButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      setTargetRatio(parseFloat(btn.dataset.ratio));
+    });
+  });
+
+  ratioSlider.addEventListener("input", (e) => {
+    setTargetRatio(parseFloat(e.target.value));
+  });
+
+  // 繪製圓角矩形輔助函式
+  function drawRoundedRect(ctx, x, y, width, height, radius, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function checkHitAndStamp() {
+    const dPA = dist(mathP, mathA);
+    const dPB = dist(mathP, mathB);
+    const ratio = dPB === 0 ? 999 : (dPA / dPB);
+    
+    // 命中容差: 依據 k 動態微調
+    const tolerance = 0.05 * targetK;
+    const isHit = Math.abs(ratio - targetK) <= tolerance;
+
+    if (isHit && chkAutoStamp.checked) {
+      let ptToSave = { x: mathP.x, y: mathP.y };
+
+      // 幾何吸附校正：若開啟吸附，將落點精準投影至理論正圓上，消除手震散斑！
+      if (chkSnap.checked) {
+        const circ = getTheoreticalLocus(targetK);
+        if (circ.isLine) {
+          ptToSave.x = circ.xMid;
+        } else {
+          const angle = Math.atan2(mathP.y - circ.centerY, mathP.x - circ.centerX);
+          ptToSave.x = circ.centerX + circ.radius * Math.cos(angle);
+          ptToSave.y = circ.centerY + circ.radius * Math.sin(angle);
+        }
+      }
+
+      const last = stampedPoints[stampedPoints.length - 1];
+      if (!last || dist(last, ptToSave) > 0.05) {
+        stampedPoints.push(ptToSave);
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    // 繪製坐標網格
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#131f37";
+    for (let x = originX % SCALE; x < width; x += SCALE) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = originY % SCALE; y < height; y += SCALE) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+
+    // 坐標軸
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, originY); ctx.lineTo(width, originY);
+    ctx.moveTo(originX, 0); ctx.lineTo(originX, height);
+    ctx.stroke();
+
+    const circ = getTheoreticalLocus(targetK);
+    const scrA = toScreen(mathA);
+    const scrB = toScreen(mathB);
+    const scrP = toScreen(mathP);
+
+    // 理論軌跡 (如果開啟)
+    if (showTrueCircle) {
+      if (circ.isLine) {
+        // 垂直平分線
+        const scrMidX = originX + circ.xMid * SCALE;
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.6)";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath(); ctx.moveTo(scrMidX, 0); ctx.lineTo(scrMidX, height); ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        const center = toScreen({ x: circ.centerX, y: circ.centerY });
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, circ.radius * SCALE, 0, 2 * Math.PI);
+        ctx.strokeStyle = "rgba(251, 146, 60, 0.5)";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 標註直徑端點 C 與 D
+        const scrC = toScreen(circ.ptC);
+        const scrD = toScreen(circ.ptD);
+
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath(); ctx.arc(scrC.x, scrC.y, 6, 0, 2*Math.PI); ctx.fill();
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillText(`內分點 C (${circ.ptC.x.toFixed(1)})`, scrC.x - 30, scrC.y + 20);
+
+        ctx.fillStyle = "#4ade80";
+        ctx.beginPath(); ctx.arc(scrD.x, scrD.y, 6, 0, 2*Math.PI); ctx.fill();
+        ctx.fillText(`外分點 D (${circ.ptD.x.toFixed(1)})`, scrD.x - 30, scrD.y + 20);
+      }
+    }
+
+    // 繪製歷史命中的足跡點
+    for (let pt of stampedPoints) {
+      const scr = toScreen(pt);
+      ctx.beginPath();
+      ctx.arc(scr.x, scr.y, 3.5, 0, 2 * Math.PI);
+      ctx.fillStyle = "rgba(74, 222, 128, 0.85)";
+      ctx.shadowColor = "#4ade80";
+      ctx.shadowBlur = 6;
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // 連線 PA 與 PB
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "#38bdf8";
+    ctx.beginPath(); ctx.moveTo(scrP.x, scrP.y); ctx.lineTo(scrA.x, scrA.y); ctx.stroke();
+
+    ctx.strokeStyle = "#f87171";
+    ctx.beginPath(); ctx.moveTo(scrP.x, scrP.y); ctx.lineTo(scrB.x, scrB.y); ctx.stroke();
+
+    // 基準線 AB
+    ctx.strokeStyle = "#475569";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(scrA.x, scrA.y); ctx.lineTo(scrB.x, scrB.y); ctx.stroke();
+
+    // 繪製定點 A
+    ctx.fillStyle = "#38bdf8";
+    ctx.beginPath(); ctx.arc(scrA.x, scrA.y, 7, 0, 2 * Math.PI); ctx.fill();
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText("A (-2.5, 0)", scrA.x - 30, scrA.y + 22);
+
+    // 繪製定點 B
+    ctx.fillStyle = "#f87171";
+    ctx.beginPath(); ctx.arc(scrB.x, scrB.y, 7, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillText("B (0.5, 0)", scrB.x - 25, scrB.y + 22);
+
+    // 計算長度與比值
+    const dPA = dist(mathP, mathA);
+    const dPB = dist(mathP, mathB);
+    const ratio = dPB === 0 ? 999 : (dPA / dPB);
+    const tolerance = 0.05 * targetK;
+    const isHit = Math.abs(ratio - targetK) <= tolerance;
+
+    // 繪製動點 P
+    ctx.fillStyle = isHit ? "#4ade80" : "#fbbf24";
+    ctx.shadowColor = isHit ? "#4ade80" : "#fbbf24";
+    ctx.shadowBlur = isHit ? 22 : 8;
+    ctx.beginPath(); ctx.arc(scrP.x, scrP.y, 11, 0, 2 * Math.PI); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // ==============================================================
+    // 🌟 浮動 HUD：直接在動點 P 旁展現 PA、PB 與比值格子！
+    // ==============================================================
+    ctx.font = "bold 12px monospace";
+
+    // 1. 左側浮動膠囊：PA 長度
+    const textPA = `PA: ${dPA.toFixed(2)}`;
+    const wPA = ctx.measureText(textPA).width + 14;
+    const posPA = { x: scrP.x - wPA - 16, y: scrP.y - 12 };
+    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 1.5;
+    drawRoundedRect(ctx, posPA.x, posPA.y, wPA, 24, 12, true, true);
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillText(textPA, posPA.x + 7, posPA.y + 16);
+
+    // 2. 右側浮動膠囊：PB 長度
+    const textPB = `PB: ${dPB.toFixed(2)}`;
+    const wPB = ctx.measureText(textPB).width + 14;
+    const posPB = { x: scrP.x + 16, y: scrP.y - 12 };
+    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+    ctx.strokeStyle = "#f87171";
+    ctx.lineWidth = 1.5;
+    drawRoundedRect(ctx, posPB.x, posPB.y, wPB, 24, 12, true, true);
+    ctx.fillStyle = "#f87171";
+    ctx.fillText(textPB, posPB.x + 7, posPB.y + 16);
+
+    // 3. 正上方浮動中央大格子：比值 PA/PB (目標 k:1)
+    const textRatio = isHit 
+      ? `🎯 比值: ${ratio.toFixed(2)} (命中 ${targetK}:1！)` 
+      : `比值 (PA/PB): ${ratio.toFixed(2)}`;
+    ctx.font = isHit ? "bold 13px sans-serif" : "bold 12px sans-serif";
+    const wRatio = ctx.measureText(textRatio).width + 20;
+    const posRatio = { x: scrP.x - wRatio / 2, y: scrP.y - 50 };
+
+    ctx.fillStyle = isHit ? "rgba(22, 101, 52, 0.95)" : "rgba(30, 41, 59, 0.92)";
+    ctx.strokeStyle = isHit ? "#4ade80" : "#475569";
+    ctx.lineWidth = isHit ? 2 : 1;
+    if (isHit) {
+      ctx.shadowColor = "#22c55e";
+      ctx.shadowBlur = 15;
+    }
+    drawRoundedRect(ctx, posRatio.x, posRatio.y, wRatio, 28, 14, true, true);
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = isHit ? "#86efac" : "#e2e8f0";
+    ctx.fillText(textRatio, posRatio.x + 10, posRatio.y + 18);
+  }
+
+  // 互動拖曳事件
+  function onPointerDown(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const scrP = toScreen(mathP);
+    if (dist(mouseScr, scrP) < 35) {
+      isDragging = true;
+    }
+  }
+
+  function onPointerMove(e) {
+    if (!isDragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    mathP = toMath(mouseScr);
+    checkHitAndStamp();
+    draw();
+  }
+
+  function onPointerUp() {
+    isDragging = false;
+  }
+
+  canvas.addEventListener("pointerdown", onPointerDown);
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+
+  // 工具列按鈕
+  btnClear.addEventListener("click", () => {
+    stampedPoints = [];
+    showTrueCircle = false;
+    btnToggleCircle.classList.remove("active");
+    draw();
+  });
+
+  btnToggleCircle.addEventListener("click", () => {
+    showTrueCircle = !showTrueCircle;
+    btnToggleCircle.classList.toggle("active", showTrueCircle);
+    draw();
+  });
+
+  btnScan.addEventListener("click", () => {
+    stampedPoints = [];
+    const circ = getTheoreticalLocus(targetK);
+    if (circ.isLine) {
+      for (let y = -4; y <= 4; y += 0.08) {
+        stampedPoints.push({ x: circ.xMid, y: y });
+      }
+    } else {
+      const numPoints = 160;
+      for (let i = 0; i < numPoints; i++) {
+        const theta = (i / numPoints) * 2 * Math.PI;
+        const x = circ.centerX + circ.radius * Math.cos(theta);
+        const y = circ.centerY + circ.radius * Math.sin(theta);
+        stampedPoints.push({ x, y });
+      }
+    }
+    showTrueCircle = true;
+    btnToggleCircle.classList.add("active");
+    draw();
+  });
+
+  resize();
+</script>
+</body>
+</html>

@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>幾何動點軌跡 - 互動探索實驗室 (V4 定點解鎖版)</title>
+<style>
+  :root {
+    --bg-color: #0b1120;
+    --panel-bg: rgba(15, 23, 42, 0.92);
+    --border-color: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --color-a: #38bdf8;
+    --color-b: #f87171;
+    --color-p: #fbbf24;
+    --color-match: #4ade80;
+    --color-circle: #fb923c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  header {
+    padding: 14px 28px;
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(14px);
+    z-index: 10;
+  }
+
+  /* 標題區 (放大 2 倍) */
+  .title-group h1 { font-size: 1.6rem; font-weight: 800; color: #fff; letter-spacing: 0.8px; }
+  .title-group p { font-size: 1.05rem; color: var(--text-secondary); margin-top: 4px; }
+
+  /* 正上方比例控制台 (置中且字體放大 2 倍) */
+  .center-controller {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #1e293b;
+    padding: 10px 24px;
+    border-radius: 40px;
+    border: 2px solid #3b82f6;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 20;
+    max-width: 90vw;
+  }
+  .center-controller label { font-size: 1.25rem; font-weight: 800; color: #f8fafc; white-space: nowrap; }
+  
+  .ratio-slider {
+    width: 180px;
+    height: 10px;
+    cursor: pointer;
+    accent-color: #38bdf8;
+  }
+  #val-target-ratio {
+    font-family: monospace;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #38bdf8;
+    min-width: 90px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .pin-btn {
+    background: #334155;
+    color: #f1f5f9;
+    border: 2px solid #38bdf8;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .pin-btn:hover { background: #0284c7; color: #fff; transform: translateY(-1px); }
+  .pin-btn:active { transform: translateY(0); }
+
+  /* 使用者自選釘選的 K 值膠囊容器 */
+  .pinned-chips-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 6px;
+    border-left: 2px solid #334155;
+    padding-left: 14px;
+    overflow-x: auto;
+    max-width: 380px;
+  }
+  .pinned-chips-container::-webkit-scrollbar { height: 4px; }
+  .pinned-chips-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+
+  .pinned-chip {
+    background: #0f172a;
+    border: 2px solid #64748b;
+    color: #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 14px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+  .pinned-chip:hover { border-color: #38bdf8; color: #fff; transform: translateY(-1px); }
+  .pinned-chip.active { background: #1e3a8a; border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 10px rgba(59, 130, 246, 0.6); }
+
+  .chip-delete-btn {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.9rem;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .chip-delete-btn:hover { background: #ef4444; color: #fff; }
+
+  #main-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+  }
+
+  /* 底部工具列 (精簡整合排版) */
+  #toolbar {
+    position: absolute;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-bg);
+    padding: 10px 24px;
+    border-radius: 50px;
+    border: 2px solid var(--border-color);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(16px);
+    z-index: 10;
+  }
+
+  .btn {
+    background: #334155;
+    color: #f1f5f9;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn:hover { background: #475569; transform: translateY(-2px); }
+  .btn:active { transform: translateY(0); }
+  .btn.active { background: #2563eb; color: #fff; box-shadow: 0 0 14px rgba(37, 99, 235, 0.7); }
+
+  /* 次要選項：字體縮小降噪 */
+  .checkbox-label-secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0 4px;
+    user-select: none;
+  }
+  .checkbox-label-secondary input {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    accent-color: #3b82f6;
+  }
+
+  /* 重要解鎖選項：清晰高亮 */
+  .checkbox-label-primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f8fafc;
+    background: rgba(30, 41, 59, 0.85);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #38bdf8;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+  }
+  .checkbox-label-primary:hover {
+    background: rgba(56, 189, 248, 0.18);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+  }
+  .checkbox-label-primary input {
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    accent-color: #38bdf8;
+  }
+
+  .toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: #475569;
+    margin: 0 4px;
+  }
+
+  /* 左上探索提示 */
+  #hint-overlay {
+    position: absolute;
+    top: 24px;
+    left: 28px;
+    background: rgba(15, 23, 42, 0.90);
+    border: 2px solid var(--border-color);
+    padding: 18px 24px;
+    border-radius: 14px;
+    max-width: 420px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #cbd5e1;
+    pointer-events: none;
+    backdrop-filter: blur(10px);
+  }
+  #hint-overlay strong { color: #fbbf24; font-weight: 800; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-group">
+    <h1>幾何動點軌跡探索實驗室</h1>
+    <p>拖曳動點 P，尋找所有滿足「PA : PB = k : 1」的未知神秘曲線</p>
+  </div>
+</header>
+
+<!-- 正上方比例控制台：自移動滑桿 + 釘選/儲存 K 值 + 自選 K 值膠囊群 -->
+<div class="center-controller">
+  <label for="ratio-slider">目標比例 (k) :</label>
+  <input type="range" id="ratio-slider" class="ratio-slider" min="0.3" max="5.0" step="0.1" value="2.0">
+  <span id="val-target-ratio">2.0 : 1</span>
+  <button id="btn-pin-ratio" class="pin-btn">⭐ 儲存此比例</button>
+  <div id="pinned-chips" class="pinned-chips-container">
+    <!-- 使用者自選釘選的 K 值將動態插入在此處 -->
+  </div>
+</div>
+
+<div id="main-container">
+  <canvas id="canvas"></canvas>
+
+  <div id="hint-overlay">
+    💡 <strong>探索任務</strong>：<br>
+    用滑鼠按住黃色動點 <strong>P</strong> 拖曳。<br>
+    長度與比值已<strong>顯示</strong>在動點 <strong>P</strong> 兩側與上方。<br>
+    當比值符合目標時，會爆發亮綠色並留下純淨軌跡，猜猜看所有綠點最後會拼出什麼形狀？
+  </div>
+
+  <div id="toolbar">
+    <!-- 次要選項 (小字降噪) -->
+    <label class="checkbox-label-secondary" title="動點符合比值時自動蓋下足跡">
+      <input type="checkbox" id="chk-auto-stamp" checked> 命中自動留痕
+    </label>
+    <label class="checkbox-label-secondary" title="消除手震散斑，使落點嚴格平滑對齊">
+      <input type="checkbox" id="chk-snap" checked> 幾何精密吸附
+    </label>
+
+    <div class="toolbar-divider"></div>
+
+    <!-- 重要新功能：解鎖 A、B 定點 -->
+    <label class="checkbox-label-primary" title="勾選後可直接在 X 軸上用滑鼠左右拖曳 A、B 定點位置">
+      <input type="checkbox" id="chk-unlock-ab"> 🔓 解鎖 A、B 點 (X 軸拖曳)
+    </label>
+
+    <div class="toolbar-divider"></div>
+
+    <!-- 核心操作按鈕 (已整併移除密集掃描按鈕) -->
+    <button class="btn" id="btn-toggle-circle">⭕ 揭曉理論軌跡</button>
+    <button class="btn" id="btn-clear" style="background:#7f1d1d;">🗑️ 清空足跡</button>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const ratioSlider = document.getElementById("ratio-slider");
+  const valTargetRatio = document.getElementById("val-target-ratio");
+  const btnPinRatio = document.getElementById("btn-pin-ratio");
+  const pinnedChipsContainer = document.getElementById("pinned-chips");
+
+  const chkAutoStamp = document.getElementById("chk-auto-stamp");
+  const chkSnap = document.getElementById("chk-snap");
+  const chkUnlockAB = document.getElementById("chk-unlock-ab");
+  const btnToggleCircle = document.getElementById("btn-toggle-circle");
+  const btnClear = document.getElementById("btn-clear");
+
+  let width, height, originX, originY;
+  const SCALE = 80; // 1 單位 = 80px
+
+  // 定點 A、B (預設位於整數格子點，解鎖後可在 X 軸自由移動)
+  let mathA = { x: -2.0, y: 0.0 };
+  let mathB = { x: 1.0, y: 0.0 };
+  
+  // 動態目標比值 k
+  let targetK = 2.0;
+
+  // 使用者自訂儲存的 K 值清單
+  let userPinnedKList = [];
+
+  // 動點 P (初始位置)
+  let mathP = { x: 0.0, y: 1.5 };
+  
+  // 拖曳狀態管理：'P' | 'A' | 'B' | null
+  let draggingTarget = null;
+  
+  // 紀錄命中點痕跡
+  let stampedPoints = [];
+  let showTrueCircle = false;
+
+  function resize() {
+    width = canvas.width = canvas.parentElement.clientWidth;
+    height = canvas.height = canvas.parentElement.clientHeight;
+    originX = width * 0.45;
+    originY = height * 0.55;
+    draw();
+  }
+  window.addEventListener("resize", resize);
+
+  function toScreen(mathPt) {
+    return {
+      x: originX + mathPt.x * SCALE,
+      y: originY - mathPt.y * SCALE
+    };
+  }
+
+  function toMath(screenPt) {
+    return {
+      x: (screenPt.x - originX) / SCALE,
+      y: (originY - screenPt.y) / SCALE
+    };
+  }
+
+  function dist(p1, p2) {
+    return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+  }
+
+  // 計算理論軌跡參數 (圓心與半徑)
+  function getTheoreticalLocus(k) {
+    if (Math.abs(k - 1.0) < 0.001) {
+      return { isLine: true, xMid: (mathA.x + mathB.x) / 2 };
+    }
+    const cx = (mathA.x + k * mathB.x) / (1 + k);
+    const dx = (k * mathB.x - mathA.x) / (k - 1);
+    
+    const centerX = (cx + dx) / 2;
+    const radius = Math.abs(dx - cx) / 2;
+    return {
+      isLine: false,
+      centerX: centerX,
+      centerY: 0,
+      radius: radius,
+      ptC: { x: cx, y: 0 },
+      ptD: { x: dx, y: 0 }
+    };
+  }
+
+  // 設定目標比例
+  function setTargetRatio(newK) {
+    targetK = Math.round(newK * 10) / 10;
+    valTargetRatio.textContent = `${targetK.toFixed(1)} : 1`;
+    ratioSlider.value = targetK;
+    updateChipHighlights();
+    stampedPoints = []; // 切換比例時清空舊足跡
+    draw();
+  }
+
+  ratioSlider.addEventListener("input", (e) => {
+    setTargetRatio(parseFloat(e.target.value));
+  });
+
+  // 釘選 / 儲存目前 K 值
+  btnPinRatio.addEventListener("click", () => {
+    const exists = userPinnedKList.some(k => Math.abs(k - targetK) < 0.05);
+    if (!exists) {
+      userPinnedKList.push(targetK);
+      renderPinnedChips();
+    }
+  });
+
+  function renderPinnedChips() {
+    pinnedChipsContainer.innerHTML = "";
+    userPinnedKList.forEach((kVal, idx) => {
+      const chip = document.createElement("div");
+      chip.className = "pinned-chip";
+      if (Math.abs(kVal - targetK) < 0.05) {
+        chip.classList.add("active");
+      }
+
+      const textSpan = document.createElement("span");
+      textSpan.textContent = `${kVal.toFixed(1)} : 1`;
+      chip.appendChild(textSpan);
+
+      // 點擊切換該 K 值
+      chip.addEventListener("click", (e) => {
+        if (e.target.classList.contains("chip-delete-btn")) return;
+        setTargetRatio(kVal);
+      });
+
+      // 右上角打叉刪除按鈕
+      const delBtn = document.createElement("button");
+      delBtn.className = "chip-delete-btn";
+      delBtn.innerHTML = "×";
+      delBtn.title = "刪除此比例";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userPinnedKList.splice(idx, 1);
+        renderPinnedChips();
+      });
+      chip.appendChild(delBtn);
+
+      pinnedChipsContainer.appendChild(chip);
+    });
+  }
+
+  function updateChipHighlights() {
+    const chips = pinnedChipsContainer.querySelectorAll(".pinned-chip");
+    chips.forEach((chip, idx) => {
+      const kVal = userPinnedKList[idx];
+      chip.classList.toggle("active", Math.abs(kVal - targetK) < 0.05);
+    });
+  }
+
+  // 繪製圓角矩形輔助函式
+  function drawRoundedRect(ctx, x, y, width, height, radius, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function checkHitAndStamp() {
+    const dPA = dist(mathP, mathA);
+    const dPB = dist(mathP, mathB);
+    const ratio = dPB === 0 ? 999 : (dPA / dPB);
+    
+    const tolerance = 0.05 * targetK;
+    const isHit = Math.abs(ratio - targetK) <= tolerance;
+
+    if (isHit && chkAutoStamp.checked) {
+      let ptToSave = { x: mathP.x, y: mathP.y };
+
+      // 幾何精密吸附校正：消除手震散斑
+      if (chkSnap.checked) {
+        const circ = getTheoreticalLocus(targetK);
+        if (circ.isLine) {
+          ptToSave.x = circ.xMid;
+        } else {
+          const angle = Math.atan2(mathP.y - circ.centerY, mathP.x - circ.centerX);
+          ptToSave.x = circ.centerX + circ.radius * Math.cos(angle);
+          ptToSave.y = circ.centerY + circ.radius * Math.sin(angle);
+        }
+      }
+
+      const last = stampedPoints[stampedPoints.length - 1];
+      if (!last || dist(last, ptToSave) > 0.04) {
+        stampedPoints.push(ptToSave);
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    // 繪製坐標網格與格點數字
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#162238";
+    for (let x = originX % SCALE; x < width; x += SCALE) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = originY % SCALE; y < height; y += SCALE) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+
+    // 主坐標軸
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "#334155";
+    ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(width, originY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, height); ctx.stroke();
+
+    const scrA = toScreen(mathA);
+    const scrB = toScreen(mathB);
+    const scrP = toScreen(mathP);
+
+    // 繪製理論軌跡 (若啟用)
+    if (showTrueCircle) {
+      const circ = getTheoreticalLocus(targetK);
+      if (circ.isLine) {
+        const scrMidX = originX + circ.xMid * SCALE;
+        ctx.strokeStyle = "rgba(251, 146, 60, 0.75)";
+        ctx.lineWidth = 4;
+        ctx.setLineDash([10, 8]);
+        ctx.beginPath(); ctx.moveTo(scrMidX, 0); ctx.lineTo(scrMidX, height); ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        const center = toScreen({ x: circ.centerX, y: circ.centerY });
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, circ.radius * SCALE, 0, 2 * Math.PI);
+        ctx.strokeStyle = "rgba(251, 146, 60, 0.65)";
+        ctx.lineWidth = 4;
+        ctx.setLineDash([10, 8]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 標註直徑端點 C 與 D (字體放大 2 倍)
+        const scrC = toScreen(circ.ptC);
+        const scrD = toScreen(circ.ptD);
+
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath(); ctx.arc(scrC.x, scrC.y, 8, 0, 2*Math.PI); ctx.fill();
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillText(`內分點 C (${circ.ptC.x.toFixed(1)})`, scrC.x - 50, scrC.y + 32);
+
+        ctx.fillStyle = "#4ade80";
+        ctx.beginPath(); ctx.arc(scrD.x, scrD.y, 8, 0, 2*Math.PI); ctx.fill();
+        ctx.fillText(`外分點 D (${circ.ptD.x.toFixed(1)})`, scrD.x - 50, scrD.y + 32);
+      }
+    }
+
+    // 繪製歷史命中的足跡點
+    for (let pt of stampedPoints) {
+      const scr = toScreen(pt);
+      ctx.beginPath();
+      ctx.arc(scr.x, scr.y, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "rgba(74, 222, 128, 0.9)";
+      ctx.shadowColor = "#4ade80";
+      ctx.shadowBlur = 8;
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // 連線 PA 與 PB (線條加粗)
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = "#38bdf8";
+    ctx.beginPath(); ctx.moveTo(scrP.x, scrP.y); ctx.lineTo(scrA.x, scrA.y); ctx.stroke();
+
+    ctx.strokeStyle = "#f87171";
+    ctx.beginPath(); ctx.moveTo(scrP.x, scrP.y); ctx.lineTo(scrB.x, scrB.y); ctx.stroke();
+
+    // 基準線 AB
+    ctx.strokeStyle = "#64748b";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(scrA.x, scrA.y); ctx.lineTo(scrB.x, scrB.y); ctx.stroke();
+
+    const isUnlocked = chkUnlockAB.checked;
+
+    // 繪製定點 A
+    ctx.fillStyle = "#38bdf8";
+    ctx.beginPath(); ctx.arc(scrA.x, scrA.y, 11, 0, 2 * Math.PI); ctx.fill();
+    ctx.font = "bold 24px sans-serif";
+    const strCoordA = mathA.x % 1 === 0 ? `${mathA.x}` : mathA.x.toFixed(1);
+    ctx.fillText(`A (${strCoordA}, 0)`, scrA.x - 45, scrA.y + 34);
+
+    if (isUnlocked) {
+      // 解鎖提示環與說明
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.arc(scrA.x, scrA.y, 19, 0, 2 * Math.PI); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillStyle = "#7dd3fc";
+      ctx.fillText("⬌ 可拖曳", scrA.x - 26, scrA.y + 54);
+    }
+
+    // 繪製定點 B
+    ctx.fillStyle = "#f87171";
+    ctx.beginPath(); ctx.arc(scrB.x, scrB.y, 11, 0, 2 * Math.PI); ctx.fill();
+    ctx.font = "bold 24px sans-serif";
+    const strCoordB = mathB.x % 1 === 0 ? `${mathB.x}` : mathB.x.toFixed(1);
+    ctx.fillText(`B (${strCoordB}, 0)`, scrB.x - 35, scrB.y + 34);
+
+    if (isUnlocked) {
+      ctx.strokeStyle = "#f87171";
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.arc(scrB.x, scrB.y, 19, 0, 2 * Math.PI); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillStyle = "#fca5a5";
+      ctx.fillText("⬌ 可拖曳", scrB.x - 26, scrB.y + 54);
+    }
+
+    // 計算長度與比值
+    const dPA = dist(mathP, mathA);
+    const dPB = dist(mathP, mathB);
+    const ratio = dPB === 0 ? 999 : (dPA / dPB);
+    const tolerance = 0.05 * targetK;
+    const isHit = Math.abs(ratio - targetK) <= tolerance;
+
+    // 繪製動點 P (直徑加大，方便滑鼠抓取)
+    ctx.fillStyle = isHit ? "#4ade80" : "#fbbf24";
+    ctx.shadowColor = isHit ? "#4ade80" : "#fbbf24";
+    ctx.shadowBlur = isHit ? 28 : 10;
+    ctx.beginPath(); ctx.arc(scrP.x, scrP.y, 16, 0, 2 * Math.PI); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // ==============================================================
+    // 🌟 浮動 HUD：動點 P 身旁 2 倍超大字展現！
+    // ==============================================================
+    ctx.font = "bold 22px monospace";
+
+    // 1. 左側浮動膠囊：PA 長度
+    const textPA = `PA: ${dPA.toFixed(2)}`;
+    const wPA = ctx.measureText(textPA).width + 24;
+    const posPA = { x: scrP.x - wPA - 24, y: scrP.y - 18 };
+    ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 2.5;
+    drawRoundedRect(ctx, posPA.x, posPA.y, wPA, 40, 20, true, true);
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillText(textPA, posPA.x + 12, posPA.y + 28);
+
+    // 2. 右側浮動膠囊：PB 長度
+    const textPB = `PB: ${dPB.toFixed(2)}`;
+    const wPB = ctx.measureText(textPB).width + 24;
+    const posPB = { x: scrP.x + 24, y: scrP.y - 18 };
+    ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+    ctx.strokeStyle = "#f87171";
+    ctx.lineWidth = 2.5;
+    drawRoundedRect(ctx, posPB.x, posPB.y, wPB, 40, 20, true, true);
+    ctx.fillStyle = "#f87171";
+    ctx.fillText(textPB, posPB.x + 12, posPB.y + 28);
+
+    // 3. 正上方浮動中央大格子：比值 PA/PB (命中時直接顯示目標比例，徹底根除矛盾)
+    const textRatio = isHit 
+      ? `🎯 ${targetK.toFixed(1)} : 1` 
+      : `比值: ${ratio.toFixed(2)}`;
+    ctx.font = isHit ? "bold 28px sans-serif" : "bold 24px sans-serif";
+    const wRatio = ctx.measureText(textRatio).width + 36;
+    const posRatio = { x: scrP.x - wRatio / 2, y: scrP.y - 80 };
+
+    ctx.fillStyle = isHit ? "rgba(22, 101, 52, 0.96)" : "rgba(30, 41, 59, 0.94)";
+    ctx.strokeStyle = isHit ? "#4ade80" : "#64748b";
+    ctx.lineWidth = isHit ? 3.5 : 2;
+    if (isHit) {
+      ctx.shadowColor = "#22c55e";
+      ctx.shadowBlur = 26;
+    }
+    drawRoundedRect(ctx, posRatio.x, posRatio.y, wRatio, 52, 26, true, true);
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = isHit ? "#86efac" : "#f1f5f9";
+    ctx.fillText(textRatio, posRatio.x + 18, posRatio.y + 36);
+  }
+
+  // 互動拖曳事件 (支援 P、A、B 三點分流)
+  function onPointerDown(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const scrP = toScreen(mathP);
+    const scrA = toScreen(mathA);
+    const scrB = toScreen(mathB);
+
+    if (chkUnlockAB.checked && dist(mouseScr, scrA) < 35) {
+      draggingTarget = 'A';
+      stampedPoints = []; // 改變基底定點時清空舊軌跡
+    } else if (chkUnlockAB.checked && dist(mouseScr, scrB) < 35) {
+      draggingTarget = 'B';
+      stampedPoints = [];
+    } else if (dist(mouseScr, scrP) < 50) {
+      draggingTarget = 'P';
+    }
+  }
+
+  function onPointerMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const scrP = toScreen(mathP);
+    const scrA = toScreen(mathA);
+    const scrB = toScreen(mathB);
+
+    // 未按下滑鼠時的游標自適應
+    if (!draggingTarget) {
+      if (chkUnlockAB.checked && (dist(mouseScr, scrA) < 35 || dist(mouseScr, scrB) < 35)) {
+        canvas.style.cursor = "ew-resize";
+      } else if (dist(mouseScr, scrP) < 50) {
+        canvas.style.cursor = "grab";
+      } else {
+        canvas.style.cursor = "crosshair";
+      }
+      return;
+    }
+
+    const mathM = toMath(mouseScr);
+    if (draggingTarget === 'P') {
+      canvas.style.cursor = "grabbing";
+      mathP = mathM;
+      checkHitAndStamp();
+    } else if (draggingTarget === 'A') {
+      canvas.style.cursor = "ew-resize";
+      let newX = Math.round(mathM.x * 2) / 2; // 0.5 格點精確吸附
+      if (Math.abs(newX - mathB.x) < 0.5) {
+        newX = mathB.x + (newX < mathB.x ? -0.5 : 0.5); // 防止與 B 點重合
+      }
+      mathA.x = newX;
+      mathA.y = 0.0;
+      checkHitAndStamp();
+    } else if (draggingTarget === 'B') {
+      canvas.style.cursor = "ew-resize";
+      let newX = Math.round(mathM.x * 2) / 2;
+      if (Math.abs(newX - mathA.x) < 0.5) {
+        newX = mathA.x + (newX < mathA.x ? -0.5 : 0.5);
+      }
+      mathB.x = newX;
+      mathB.y = 0.0;
+      checkHitAndStamp();
+    }
+    draw();
+  }
+
+  function onPointerUp() {
+    draggingTarget = null;
+    canvas.style.cursor = "crosshair";
+  }
+
+  canvas.addEventListener("pointerdown", onPointerDown);
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+
+  // 解鎖按鈕切換時重繪
+  chkUnlockAB.addEventListener("change", () => {
+    draw();
+  });
+
+  // 工具列按鈕
+  btnClear.addEventListener("click", () => {
+    stampedPoints = [];
+    showTrueCircle = false;
+    btnToggleCircle.classList.remove("active");
+    draw();
+  });
+
+  btnToggleCircle.addEventListener("click", () => {
+    showTrueCircle = !showTrueCircle;
+    btnToggleCircle.classList.toggle("active", showTrueCircle);
+    draw();
+  });
+
+  resize();
+</script>
+</body>
+</html>

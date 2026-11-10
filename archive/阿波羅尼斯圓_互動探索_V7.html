@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>幾何動點軌跡 - 互動探索實驗室 (V7 雙平台完美適配版)</title>
+<style>
+  :root {
+    --bg-color: #0b1120;
+    --panel-bg: rgba(15, 23, 42, 0.92);
+    --border-color: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --color-a: #38bdf8;
+    --color-b: #f87171;
+    --color-p: #fbbf24;
+    --color-match: #4ade80;
+    --color-circle: #fb923c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+  
+  html, body {
+    width: 100vw;
+    height: 100vh; /* Fallback for older Android Chrome */
+    height: 100dvh; /* Modern dynamic viewport height for iOS & Android */
+    min-height: -webkit-fill-available;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    overflow: hidden;
+    overscroll-behavior: none; /* 徹底封殺安卓 Chrome 下拉重新整理 (Pull-to-refresh) */
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
+  }
+
+  header {
+    padding: 10px 24px;
+    background: var(--panel-bg);
+    border-bottom: 1.5px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(14px);
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  .title-group h1 { font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: 0.6px; white-space: nowrap; }
+  .title-group p { font-size: 0.95rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; }
+
+  /* 正上方比例控制台 */
+  .center-controller {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #1e293b;
+    padding: 8px 20px;
+    border-radius: 40px;
+    border: 2px solid #3b82f6;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 20;
+    max-width: 92vw;
+    white-space: nowrap;
+  }
+  .center-controller label { font-size: 1.15rem; font-weight: 800; color: #f8fafc; white-space: nowrap; }
+  
+  .ratio-slider {
+    width: 150px;
+    height: 8px;
+    cursor: pointer;
+    accent-color: #38bdf8;
+    flex-shrink: 0;
+  }
+  #val-target-ratio {
+    font-family: monospace;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #38bdf8;
+    min-width: 75px;
+    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .pin-btn {
+    background: #334155;
+    color: #f1f5f9;
+    border: 2px solid #38bdf8;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pin-btn:hover { background: #0284c7; color: #fff; transform: translateY(-1px); }
+
+  /* 釘選 K 值膠囊容器 */
+  .pinned-chips-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 4px;
+    border-left: 2px solid #334155;
+    padding-left: 10px;
+    overflow-x: auto;
+    max-width: 320px;
+    white-space: nowrap;
+  }
+  .pinned-chips-container::-webkit-scrollbar { height: 3px; }
+  .pinned-chips-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+
+  .pinned-chip {
+    background: #0f172a;
+    border: 1.5px solid #64748b;
+    color: #e2e8f0;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pinned-chip.active { background: #1e3a8a; border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 10px rgba(59, 130, 246, 0.6); }
+
+  .chip-delete-btn {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.85rem;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  #main-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+
+  /* 底部工具列 (強制單行不折行，支援 iOS 安全底區) */
+  #toolbar {
+    position: absolute;
+    bottom: max(18px, env(safe-area-inset-bottom, 18px));
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-bg);
+    padding: 8px 20px;
+    border-radius: 50px;
+    border: 2px solid var(--border-color);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(16px);
+    z-index: 20;
+    white-space: nowrap;
+    max-width: 96vw;
+  }
+
+  .btn {
+    background: #334155;
+    color: #f1f5f9;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 30px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .btn:hover { background: #475569; }
+  .btn.active { background: #2563eb; color: #fff; box-shadow: 0 0 14px rgba(37, 99, 235, 0.7); }
+
+  .checkbox-label-primary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f8fafc;
+    background: rgba(30, 41, 59, 0.85);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #38bdf8;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .checkbox-label-primary input { width: 15px; height: 15px; cursor: pointer; accent-color: #38bdf8; flex-shrink: 0; }
+
+  .secondary-stacked-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .checkbox-label-secondary {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .checkbox-label-secondary input { width: 13px; height: 13px; cursor: pointer; accent-color: #3b82f6; flex-shrink: 0; }
+
+  .toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: #475569;
+    margin: 0 2px;
+    flex-shrink: 0;
+  }
+
+  /* 可收合式探索任務說明盒 (解決手機螢幕遮擋) */
+  #hint-overlay {
+    position: absolute;
+    top: 18px;
+    left: 20px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1.5px solid var(--border-color);
+    padding: 12px 18px;
+    border-radius: 12px;
+    max-width: 380px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+    backdrop-filter: blur(12px);
+    z-index: 15;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .hint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    white-space: nowrap;
+    gap: 8px;
+  }
+  .hint-header strong { color: #fbbf24; font-weight: 800; }
+  .hint-title-full { white-space: nowrap; }
+  .hint-title-short { display: none; white-space: nowrap; }
+  .hint-toggle-btn {
+    background: #334155;
+    color: #94a3b8;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    flex-shrink: 0;
+  }
+  .hint-toggle-btn:hover { background: #475569; color: #fff; }
+  #hint-overlay.collapsed {
+    padding: 4px 10px;
+    border-radius: 18px;
+    max-width: fit-content;
+    width: auto;
+    background: rgba(30, 41, 59, 0.92);
+    white-space: nowrap;
+    border-color: #3b82f6;
+  }
+  #hint-overlay.collapsed .hint-title-full { display: none; }
+  #hint-overlay.collapsed .hint-title-short { display: inline-flex; align-items: center; gap: 4px; }
+  #hint-overlay.collapsed .hint-content { display: none; }
+  #hint-overlay.collapsed .hint-toggle-btn { transform: rotate(45deg); }
+
+  /* 畫面右側浮動縮放與置中按鈕群 */
+  .canvas-floating-controls {
+    position: absolute;
+    right: 16px;
+    top: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 15;
+  }
+  .ctrl-btn {
+    background: rgba(30, 41, 59, 0.88);
+    border: 1.5px solid #475569;
+    color: #f1f5f9;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    transition: all 0.15s ease;
+  }
+  .ctrl-btn:hover { background: #2563eb; border-color: #3b82f6; }
+  .ctrl-btn:active { transform: scale(0.92); }
+
+  /* ==============================================================
+     📱 手機專屬極致適配 (螢幕寬度小於 640px)
+     ============================================================== */
+  @media (max-width: 640px) {
+    header { padding: 6px 12px; }
+    .title-group h1 { font-size: 1.05rem; }
+    .title-group p { display: none; } /* 手機隱藏副標題以釋放視野 */
+
+    .center-controller {
+      top: 44px;
+      padding: 4px 12px;
+      gap: 6px;
+      border-radius: 20px;
+      border-width: 1.5px;
+      max-width: 96vw;
+    }
+    .center-controller label { font-size: 0.9rem; }
+    .ratio-slider { width: 90px; height: 8px; }
+    #val-target-ratio { font-size: 1.05rem; min-width: 55px; }
+    .pin-btn { font-size: 0.8rem; padding: 4px 8px; border-radius: 12px; }
+    .pinned-chips-container { max-width: 130px; gap: 5px; padding-left: 6px; }
+    .pinned-chip { font-size: 0.82rem; padding: 2px 6px; border-radius: 8px; }
+
+    #hint-overlay {
+      top: 86px;
+      left: 10px;
+      max-width: 250px;
+      font-size: 0.82rem;
+      padding: 8px 12px;
+    }
+    #hint-overlay.collapsed { max-width: fit-content; width: auto; padding: 4px 10px; }
+
+    .canvas-floating-controls {
+      top: 86px;
+      right: 10px;
+      gap: 6px;
+    }
+    .ctrl-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+
+    #toolbar {
+      bottom: max(10px, env(safe-area-inset-bottom, 10px));
+      padding: 6px 12px;
+      gap: 6px;
+      border-radius: 30px;
+      max-width: 98vw;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
+    }
+    .btn { font-size: 0.82rem; padding: 6px 10px; border-radius: 20px; }
+    .checkbox-label-primary { font-size: 0.78rem; padding: 4px 8px; border-radius: 12px; gap: 3px; }
+    .checkbox-label-primary input { width: 13px; height: 13px; }
+    .checkbox-label-secondary { font-size: 0.68rem; gap: 3px; }
+    .checkbox-label-secondary input { width: 11px; height: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-group">
+    <h1>幾何動點軌跡探索實驗室</h1>
+    <p>拖曳動點 P，尋找所有滿足「PA : PB = k : 1」的未知神秘曲線</p>
+  </div>
+</header>
+
+<!-- 正上方比例控制台 -->
+<div class="center-controller">
+  <label for="ratio-slider">目標比例 (k) :</label>
+  <input type="range" id="ratio-slider" class="ratio-slider" min="0.3" max="5.0" step="0.1" value="2.0">
+  <span id="val-target-ratio">2.0 : 1</span>
+  <button id="btn-pin-ratio" class="pin-btn">⭐ 儲存</button>
+  <div id="pinned-chips" class="pinned-chips-container"></div>
+</div>
+
+<div id="main-container">
+  <canvas id="canvas"></canvas>
+
+  <!-- 浮動縮放按鈕 -->
+  <div class="canvas-floating-controls">
+    <button id="btn-zoom-in" class="ctrl-btn" title="放大">➕</button>
+    <button id="btn-zoom-out" class="ctrl-btn" title="縮小">➖</button>
+    <button id="btn-zoom-reset" class="ctrl-btn" title="全景置中">⟲</button>
+  </div>
+
+  <!-- 可收合的任務說明框 -->
+  <div id="hint-overlay">
+    <div class="hint-header" id="hint-header">
+      <span class="hint-title-full">💡 <strong>探索任務</strong></span>
+      <span class="hint-title-short"><strong>任務</strong></span>
+      <button id="btn-toggle-hint" class="hint-toggle-btn" title="收合說明">✕</button>
+    </div>
+    <div id="hint-content" class="hint-content">
+      用手指或滑鼠按住黃色動點 <strong>P</strong> 拖曳。<br>
+      長度與比值已<strong>顯示</strong>在動點 <strong>P</strong> 兩側與上方。<br>
+      當比值符合目標時會爆發亮綠色，猜猜看所有綠點最後會拼出什麼形狀？<br>
+      <span style="font-size:0.85em; color:#94a3b8;">* 提示：單指滑動空白處可平移畫布，雙指可自由縮放！</span>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <!-- 1. 解鎖 A、B 點 (100% 單行) -->
+    <label class="checkbox-label-primary" title="勾選後可直接在 X 軸上用手指/滑鼠左右拖曳 A、B 定點位置">
+      <input type="checkbox" id="chk-unlock-ab"> 🔓 解鎖 A、B 點
+    </label>
+
+    <div class="toolbar-divider"></div>
+
+    <!-- 2. 核心操作按鈕 -->
+    <button class="btn" id="btn-toggle-circle">⭕ 揭曉理論軌跡</button>
+    <button class="btn" id="btn-clear" style="background:#7f1d1d;">🗑️ 清空足跡</button>
+
+    <div class="toolbar-divider"></div>
+
+    <!-- 3. 最右側：次要小字選項 (上下雙列) -->
+    <div class="secondary-stacked-container">
+      <label class="checkbox-label-secondary" title="動點符合比值時自動蓋下足跡">
+        <input type="checkbox" id="chk-auto-stamp" checked> 命中自動留痕
+      </label>
+      <label class="checkbox-label-secondary" title="消除手震散斑，使落點平滑對齊">
+        <input type="checkbox" id="chk-snap" checked> 幾何精密吸附
+      </label>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const ratioSlider = document.getElementById("ratio-slider");
+  const valTargetRatio = document.getElementById("val-target-ratio");
+  const btnPinRatio = document.getElementById("btn-pin-ratio");
+  const pinnedChipsContainer = document.getElementById("pinned-chips");
+
+  const chkAutoStamp = document.getElementById("chk-auto-stamp");
+  const chkSnap = document.getElementById("chk-snap");
+  const chkUnlockAB = document.getElementById("chk-unlock-ab");
+  const btnToggleCircle = document.getElementById("btn-toggle-circle");
+  const btnClear = document.getElementById("btn-clear");
+
+  const btnZoomIn = document.getElementById("btn-zoom-in");
+  const btnZoomOut = document.getElementById("btn-zoom-out");
+  const btnZoomReset = document.getElementById("btn-zoom-reset");
+  const hintOverlay = document.getElementById("hint-overlay");
+  const btnToggleHint = document.getElementById("btn-toggle-hint");
+  const hintHeader = document.getElementById("hint-header");
+
+  let width, height, originX, originY;
+  let SCALE = 55; // 動態計算
+
+  // 定點 A、B (預設位於整數格子點，解鎖後可在 X 軸自由移動)
+  let mathA = { x: -2.0, y: 0.0 };
+  let mathB = { x: 1.0, y: 0.0 };
+  
+  // 動態目標比值 k
+  let targetK = 2.0;
+
+  // 使用者自訂儲存的 K 值清單
+  let userPinnedKList = [];
+
+  // 動點 P (初始位置)
+  let mathP = { x: 0.0, y: 1.5 };
+  
+  // 多點觸控與拖曳狀態
+  const activePointers = new Map();
+  let draggingTarget = null; // 'P' | 'A' | 'B' | null
+  let isPanningCanvas = false;
+  let panStart = { x: 0, y: 0 };
+  let initialPinchDistance = null;
+  let pinchStartScale = SCALE;
+
+  // 紀錄命中點痕跡
+  let stampedPoints = [];
+  let showTrueCircle = false;
+
+  // 手機版自動收合說明框
+  if (window.innerWidth < 640) {
+    // 預設在手機上展開 2.5 秒後自動收合，讓出全螢幕
+    setTimeout(() => {
+      hintOverlay.classList.add("collapsed");
+    }, 2800);
+  }
+
+  function toggleHintBox() {
+    hintOverlay.classList.toggle("collapsed");
+  }
+  btnToggleHint.addEventListener("click", (e) => { e.stopPropagation(); toggleHintBox(); });
+  hintHeader.addEventListener("click", toggleHintBox);
+
+  // 智慧全景自適應計算 (確保手機與電腦皆 100% 完整收納圓形與定點)
+  function autoFitView() {
+    const isMobile = width < 640;
+    if (isMobile) {
+      // 整體幾何系統寬度約 7.5 個單位 (A 到 D 約 6 單位 + 邊距)
+      SCALE = Math.max(36, Math.floor(width / 7.6));
+      // 將系統核心 (x = 1.0) 居中置於螢幕中線
+      originX = Math.round(width * 0.5 - 1.0 * SCALE);
+      originY = Math.round(height * 0.52);
+    } else {
+      SCALE = 70;
+      originX = Math.round(width * 0.45);
+      originY = Math.round(height * 0.54);
+    }
+  }
+
+  function resize() {
+    width = canvas.width = canvas.parentElement.clientWidth;
+    height = canvas.height = canvas.parentElement.clientHeight;
+    autoFitView();
+    draw();
+  }
+  window.addEventListener("resize", resize);
+
+  function toScreen(mathPt) {
+    return {
+      x: originX + mathPt.x * SCALE,
+      y: originY - mathPt.y * SCALE
+    };
+  }
+
+  function toMath(screenPt) {
+    return {
+      x: (screenPt.x - originX) / SCALE,
+      y: (originY - screenPt.y) / SCALE
+    };
+  }
+
+  function dist(p1, p2) {
+    return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+  }
+
+  // 計算理論軌跡參數 (圓心與半徑)
+  function getTheoreticalLocus(k) {
+    if (Math.abs(k - 1.0) < 0.001) {
+      return { isLine: true, xMid: (mathA.x + mathB.x) / 2 };
+    }
+    const cx = (mathA.x + k * mathB.x) / (1 + k);
+    const dx = (k * mathB.x - mathA.x) / (k - 1);
+    
+    const centerX = (cx + dx) / 2;
+    const radius = Math.abs(dx - cx) / 2;
+    return {
+      isLine: false,
+      centerX: centerX,
+      centerY: 0,
+      radius: radius,
+      ptC: { x: cx, y: 0 },
+      ptD: { x: dx, y: 0 }
+    };
+  }
+
+  // 設定目標比例
+  function setTargetRatio(newK) {
+    targetK = Math.round(newK * 10) / 10;
+    valTargetRatio.textContent = `${targetK.toFixed(1)} : 1`;
+    ratioSlider.value = targetK;
+    updateChipHighlights();
+    stampedPoints = [];
+    draw();
+  }
+
+  ratioSlider.addEventListener("input", (e) => {
+    setTargetRatio(parseFloat(e.target.value));
+  });
+
+  // 釘選比例
+  btnPinRatio.addEventListener("click", () => {
+    const exists = userPinnedKList.some(k => Math.abs(k - targetK) < 0.05);
+    if (!exists) {
+      userPinnedKList.push(targetK);
+      renderPinnedChips();
+    }
+  });
+
+  function renderPinnedChips() {
+    pinnedChipsContainer.innerHTML = "";
+    userPinnedKList.forEach((kVal, idx) => {
+      const chip = document.createElement("div");
+      chip.className = "pinned-chip";
+      if (Math.abs(kVal - targetK) < 0.05) chip.classList.add("active");
+
+      const textSpan = document.createElement("span");
+      textSpan.textContent = `${kVal.toFixed(1)} : 1`;
+      chip.appendChild(textSpan);
+
+      chip.addEventListener("click", (e) => {
+        if (e.target.classList.contains("chip-delete-btn")) return;
+        setTargetRatio(kVal);
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "chip-delete-btn";
+      delBtn.innerHTML = "×";
+      delBtn.title = "刪除此比例";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userPinnedKList.splice(idx, 1);
+        renderPinnedChips();
+      });
+      chip.appendChild(delBtn);
+
+      pinnedChipsContainer.appendChild(chip);
+    });
+  }
+
+  function updateChipHighlights() {
+    const chips = pinnedChipsContainer.querySelectorAll(".pinned-chip");
+    chips.forEach((chip, idx) => {
+      const kVal = userPinnedKList[idx];
+      chip.classList.toggle("active", Math.abs(kVal - targetK) < 0.05);
+    });
+  }
+
+  function drawRoundedRect(ctx, x, y, width, height, radius, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function checkHitAndStamp() {
+    const dPA = dist(mathP, mathA);
+    const dPB = dist(mathP, mathB);
+    const ratio = dPB === 0 ? 999 : (dPA / dPB);
+    
+    const tolerance = 0.05 * targetK;
+    const isHit = Math.abs(ratio - targetK) <= tolerance;
+
+    if (isHit && chkAutoStamp.checked) {
+      let ptToSave = { x: mathP.x, y: mathP.y };
+
+      if (chkSnap.checked) {
+        const circ = getTheoreticalLocus(targetK);
+        if (circ.isLine) {
+          ptToSave.x = circ.xMid;
+        } else {
+          const angle = Math.atan2(mathP.y - circ.centerY, mathP.x - circ.centerX);
+          ptToSave.x = circ.centerX + circ.radius * Math.cos(angle);
+          ptToSave.y = circ.centerY + circ.radius * Math.sin(angle);
+        }
+      }
+
+      const last = stampedPoints[stampedPoints.length - 1];
+      if (!last || dist(last, ptToSave) > 0.04) {
+        stampedPoints.push(ptToSave);
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    // 網格線
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#162238";
+    for (let x = originX % SCALE; x < width; x += SCALE) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = originY % SCALE; y < height; y += SCALE) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+
+    // 坐標軸
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#334155";
+    ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(width, originY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, height); ctx.stroke();
+
+    const scrA = toScreen(mathA);
+    const scrB = toScreen(mathB);
+    const scrP = toScreen(mathP);
+
+    // 理論圓形 (若揭曉)
+    if (showTrueCircle) {
+      const circ = getTheoreticalLocus(targetK);
+      if (circ.isLine) {
+        const scrMidX = originX + circ.xMid * SCALE;
+        ctx.strokeStyle = "rgba(251, 146, 60, 0.75)";
+        ctx.lineWidth = 3.5;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath(); ctx.moveTo(scrMidX, 0); ctx.lineTo(scrMidX, height); ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        const center = toScreen({ x: circ.centerX, y: circ.centerY });
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, circ.radius * SCALE, 0, 2 * Math.PI);
+        ctx.strokeStyle = "rgba(251, 146, 60, 0.70)";
+        ctx.lineWidth = 3.5;
+        ctx.setLineDash([8, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const scrC = toScreen(circ.ptC);
+        const scrD = toScreen(circ.ptD);
+
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath(); ctx.arc(scrC.x, scrC.y, 7, 0, 2*Math.PI); ctx.fill();
+        ctx.font = "bold 15px sans-serif";
+        ctx.fillText(`C(${circ.ptC.x.toFixed(1)})`, scrC.x - 22, scrC.y + 24);
+
+        ctx.fillStyle = "#4ade80";
+        ctx.beginPath(); ctx.arc(scrD.x, scrD.y, 7, 0, 2*Math.PI); ctx.fill();
+        ctx.fillText(`D(${circ.ptD.x.toFixed(1)})`, scrD.x - 22, scrD.y + 24);
+      }
+    }
+
+    // 足跡點
+    for (let pt of stampedPoints) {
+      const scr = toScreen(pt);
+      ctx.beginPath();
+      ctx.arc(scr.x, scr.y, 4.5, 0, 2 * Math.PI);
+      ctx.fillStyle = "rgba(74, 222, 128, 0.9)";
+      ctx.shadowColor = "#4ade80";
+      ctx.shadowBlur = 6;
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // 線條 PA 與 PB
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#38bdf8";
+    ctx.beginPath(); ctx.moveTo(scrP.x, scrP.y); ctx.lineTo(scrA.x, scrA.y); ctx.stroke();
+
+    ctx.strokeStyle = "#f87171";
+    ctx.beginPath(); ctx.moveTo(scrP.x, scrP.y); ctx.lineTo(scrB.x, scrB.y); ctx.stroke();
+
+    // 基準線 AB
+    ctx.strokeStyle = "#475569";
+    ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(scrA.x, scrA.y); ctx.lineTo(scrB.x, scrB.y); ctx.stroke();
+
+    const isUnlocked = chkUnlockAB.checked;
+
+    // 定點 A
+    ctx.fillStyle = "#38bdf8";
+    ctx.beginPath(); ctx.arc(scrA.x, scrA.y, 9, 0, 2 * Math.PI); ctx.fill();
+    ctx.font = "bold 18px sans-serif";
+    const strCoordA = mathA.x % 1 === 0 ? `${mathA.x}` : mathA.x.toFixed(1);
+    ctx.fillText(`A (${strCoordA}, 0)`, scrA.x - 35, scrA.y + 28);
+
+    if (isUnlocked) {
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.arc(scrA.x, scrA.y, 16, 0, 2 * Math.PI); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillStyle = "#7dd3fc";
+      ctx.fillText("⬌ 拖曳", scrA.x - 18, scrA.y + 45);
+    }
+
+    // 定點 B
+    ctx.fillStyle = "#f87171";
+    ctx.beginPath(); ctx.arc(scrB.x, scrB.y, 9, 0, 2 * Math.PI); ctx.fill();
+    ctx.font = "bold 18px sans-serif";
+    const strCoordB = mathB.x % 1 === 0 ? `${mathB.x}` : mathB.x.toFixed(1);
+    ctx.fillText(`B (${strCoordB}, 0)`, scrB.x - 28, scrB.y + 28);
+
+    if (isUnlocked) {
+      ctx.strokeStyle = "#f87171";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.arc(scrB.x, scrB.y, 16, 0, 2 * Math.PI); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillStyle = "#fca5a5";
+      ctx.fillText("⬌ 拖曳", scrB.x - 18, scrB.y + 45);
+    }
+
+    // 比值計算
+    const dPA = dist(mathP, mathA);
+    const dPB = dist(mathP, mathB);
+    const ratio = dPB === 0 ? 999 : (dPA / dPB);
+    const tolerance = 0.05 * targetK;
+    const isHit = Math.abs(ratio - targetK) <= tolerance;
+
+    // 動點 P
+    ctx.fillStyle = isHit ? "#4ade80" : "#fbbf24";
+    ctx.shadowColor = isHit ? "#4ade80" : "#fbbf24";
+    ctx.shadowBlur = isHit ? 24 : 10;
+    ctx.beginPath(); ctx.arc(scrP.x, scrP.y, 14, 0, 2 * Math.PI); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 浮動 HUD
+    ctx.font = "bold 18px monospace";
+
+    // 1. PA 長度
+    const textPA = `PA: ${dPA.toFixed(2)}`;
+    const wPA = ctx.measureText(textPA).width + 18;
+    const posPA = { x: scrP.x - wPA - 18, y: scrP.y - 14 };
+    ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, posPA.x, posPA.y, wPA, 34, 16, true, true);
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillText(textPA, posPA.x + 9, posPA.y + 24);
+
+    // 2. PB 長度
+    const textPB = `PB: ${dPB.toFixed(2)}`;
+    const wPB = ctx.measureText(textPB).width + 18;
+    const posPB = { x: scrP.x + 18, y: scrP.y - 14 };
+    ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+    ctx.strokeStyle = "#f87171";
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, posPB.x, posPB.y, wPB, 34, 16, true, true);
+    ctx.fillStyle = "#f87171";
+    ctx.fillText(textPB, posPB.x + 9, posPB.y + 24);
+
+    // 3. 中央比值大格子 (命中時直接展現目標比值)
+    const textRatio = isHit 
+      ? `🎯 ${targetK.toFixed(1)} : 1` 
+      : `比值: ${ratio.toFixed(2)}`;
+    ctx.font = isHit ? "bold 24px sans-serif" : "bold 20px sans-serif";
+    const wRatio = ctx.measureText(textRatio).width + 28;
+    const posRatio = { x: scrP.x - wRatio / 2, y: scrP.y - 68 };
+
+    ctx.fillStyle = isHit ? "rgba(22, 101, 52, 0.96)" : "rgba(30, 41, 59, 0.94)";
+    ctx.strokeStyle = isHit ? "#4ade80" : "#64748b";
+    ctx.lineWidth = isHit ? 3 : 1.8;
+    if (isHit) {
+      ctx.shadowColor = "#22c55e";
+      ctx.shadowBlur = 20;
+    }
+    drawRoundedRect(ctx, posRatio.x, posRatio.y, wRatio, 44, 22, true, true);
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = isHit ? "#86efac" : "#f1f5f9";
+    ctx.fillText(textRatio, posRatio.x + 14, posRatio.y + 30);
+  }
+
+  // ==============================================================
+  // 🖐️ 手勢事件：點拖曳 ＋ 畫布單指平移 ＋ 雙指縮放
+  // ==============================================================
+  function onPointerDown(e) {
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const scrP = toScreen(mathP);
+    const scrA = toScreen(mathA);
+    const scrB = toScreen(mathB);
+
+    if (activePointers.size === 1) {
+      // 優先判定是否抓取 P, A, B 點
+      if (chkUnlockAB.checked && dist(mouseScr, scrA) < 40) {
+        draggingTarget = 'A';
+        stampedPoints = [];
+      } else if (chkUnlockAB.checked && dist(mouseScr, scrB) < 40) {
+        draggingTarget = 'B';
+        stampedPoints = [];
+      } else if (dist(mouseScr, scrP) < 50) {
+        draggingTarget = 'P';
+      } else {
+        // 點擊空白處：啟動畫布單指平移
+        isPanningCanvas = true;
+        panStart = { x: e.clientX - originX, y: e.clientY - originY };
+      }
+      try { canvas.setPointerCapture(e.pointerId); } catch(err) {}
+    } else if (activePointers.size === 2) {
+      // 雙指同時觸碰：切換至雙指縮放 (Pinch-to-zoom)
+      draggingTarget = null;
+      isPanningCanvas = false;
+      const pts = Array.from(activePointers.values());
+      initialPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      pinchStartScale = SCALE;
+    }
+  }
+
+  function onPointerMove(e) {
+    if (!activePointers.has(e.pointerId)) return;
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    // 1. 雙指縮放處理
+    if (activePointers.size >= 2 && initialPinchDistance) {
+      const pts = Array.from(activePointers.values());
+      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const ratio = currentDist / initialPinchDistance;
+      SCALE = Math.max(25, Math.min(160, Math.round(pinchStartScale * ratio)));
+      draw();
+      return;
+    }
+
+    // 2. 單指畫布平移處理
+    if (isPanningCanvas) {
+      originX = Math.round(e.clientX - panStart.x);
+      originY = Math.round(e.clientY - panStart.y);
+      draw();
+      return;
+    }
+
+    // 3. 點位拖曳處理
+    if (!draggingTarget) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      const scrP = toScreen(mathP);
+      const scrA = toScreen(mathA);
+      const scrB = toScreen(mathB);
+      if (chkUnlockAB.checked && (dist(mouseScr, scrA) < 40 || dist(mouseScr, scrB) < 40)) {
+        canvas.style.cursor = "ew-resize";
+      } else if (dist(mouseScr, scrP) < 50) {
+        canvas.style.cursor = "grab";
+      } else {
+        canvas.style.cursor = "crosshair";
+      }
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const mathM = toMath(mouseScr);
+
+    if (draggingTarget === 'P') {
+      canvas.style.cursor = "grabbing";
+      mathP = mathM;
+      checkHitAndStamp();
+    } else if (draggingTarget === 'A') {
+      canvas.style.cursor = "ew-resize";
+      let newX = Math.round(mathM.x * 2) / 2;
+      if (Math.abs(newX - mathB.x) < 0.5) {
+        newX = mathB.x + (newX < mathB.x ? -0.5 : 0.5);
+      }
+      mathA.x = newX;
+      mathA.y = 0.0;
+      checkHitAndStamp();
+    } else if (draggingTarget === 'B') {
+      canvas.style.cursor = "ew-resize";
+      let newX = Math.round(mathM.x * 2) / 2;
+      if (Math.abs(newX - mathA.x) < 0.5) {
+        newX = mathA.x + (newX < mathA.x ? -0.5 : 0.5);
+      }
+      mathB.x = newX;
+      mathB.y = 0.0;
+      checkHitAndStamp();
+    }
+    draw();
+  }
+
+  function onPointerUp(e) {
+    if (e && e.pointerId) {
+      activePointers.delete(e.pointerId);
+      try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+    }
+    if (activePointers.size === 0) {
+      draggingTarget = null;
+      isPanningCanvas = false;
+      initialPinchDistance = null;
+      canvas.style.cursor = "crosshair";
+    } else if (activePointers.size === 1) {
+      const remainingPt = Array.from(activePointers.values())[0];
+      panStart = { x: remainingPt.x - originX, y: remainingPt.y - originY };
+      initialPinchDistance = null;
+    }
+  }
+
+  canvas.addEventListener("pointerdown", onPointerDown);
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("pointercancel", onPointerUp);
+
+  // 畫面縮放控制按鈕事件
+  btnZoomIn.addEventListener("click", () => {
+    SCALE = Math.min(160, Math.round(SCALE * 1.2));
+    draw();
+  });
+  btnZoomOut.addEventListener("click", () => {
+    SCALE = Math.max(25, Math.round(SCALE / 1.2));
+    draw();
+  });
+  btnZoomReset.addEventListener("click", () => {
+    autoFitView();
+    draw();
+  });
+
+  chkUnlockAB.addEventListener("change", () => draw());
+
+  btnClear.addEventListener("click", () => {
+    stampedPoints = [];
+    showTrueCircle = false;
+    btnToggleCircle.classList.remove("active");
+    draw();
+  });
+
+  btnToggleCircle.addEventListener("click", () => {
+    showTrueCircle = !showTrueCircle;
+    btnToggleCircle.classList.toggle("active", showTrueCircle);
+    draw();
+  });
+
+  resize();
+</script>
+</body>
+</html>
