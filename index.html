@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>幾何動點軌跡 - 互動探索實驗室 (V7 雙平台完美適配版)</title>
+<title>幾何動點軌跡 - 互動探索實驗室 (V8 雙層比例與儲存修復版)</title>
 <style>
   :root {
     --bg-color: #0b1120;
@@ -22,13 +22,13 @@
   
   html, body {
     width: 100vw;
-    height: 100vh; /* Fallback for older Android Chrome */
-    height: 100dvh; /* Modern dynamic viewport height for iOS & Android */
+    height: 100vh;
+    height: 100dvh;
     min-height: -webkit-fill-available;
     background-color: var(--bg-color);
     color: var(--text-primary);
     overflow: hidden;
-    overscroll-behavior: none; /* 徹底封殺安卓 Chrome 下拉重新整理 (Pull-to-refresh) */
+    overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
@@ -50,8 +50,8 @@
   .title-group h1 { font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: 0.6px; white-space: nowrap; }
   .title-group p { font-size: 0.95rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; }
 
-  /* 正上方比例控制台 */
-  .center-controller {
+  /* 頂部控制台外包層 (桌機橫向排版、手機自動折為上下兩層) */
+  .top-control-wrapper {
     position: absolute;
     top: 10px;
     left: 50%;
@@ -59,19 +59,28 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    z-index: 20;
+    max-width: 95vw;
+    pointer-events: auto;
+  }
+
+  .center-controller {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     background: #1e293b;
-    padding: 8px 20px;
+    padding: 8px 18px;
     border-radius: 40px;
     border: 2px solid #3b82f6;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    z-index: 20;
-    max-width: 92vw;
     white-space: nowrap;
+    flex-shrink: 0;
   }
-  .center-controller label { font-size: 1.15rem; font-weight: 800; color: #f8fafc; white-space: nowrap; }
+  .center-controller label { font-size: 1.1rem; font-weight: 800; color: #f8fafc; white-space: nowrap; }
+  .lbl-short { display: none; }
   
   .ratio-slider {
-    width: 150px;
+    width: 140px;
     height: 8px;
     cursor: pointer;
     accent-color: #38bdf8;
@@ -79,7 +88,7 @@
   }
   #val-target-ratio {
     font-family: monospace;
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     font-weight: 800;
     color: #38bdf8;
     min-width: 75px;
@@ -100,23 +109,22 @@
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     white-space: nowrap;
     flex-shrink: 0;
   }
   .pin-btn:hover { background: #0284c7; color: #fff; transform: translateY(-1px); }
+  .pin-btn:active { transform: scale(0.95); }
 
-  /* 釘選 K 值膠囊容器 */
+  /* 釘選 K 值膠囊容器 (獨立自適應) */
   .pinned-chips-container {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-left: 4px;
-    border-left: 2px solid #334155;
-    padding-left: 10px;
     overflow-x: auto;
-    max-width: 320px;
     white-space: nowrap;
+    max-width: 400px;
+    padding: 2px 4px;
   }
   .pinned-chips-container::-webkit-scrollbar { height: 3px; }
   .pinned-chips-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
@@ -125,8 +133,8 @@
     background: #0f172a;
     border: 1.5px solid #64748b;
     color: #e2e8f0;
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 5px 12px;
+    border-radius: 14px;
     font-size: 0.95rem;
     font-weight: 800;
     cursor: pointer;
@@ -135,11 +143,14 @@
     gap: 6px;
     white-space: nowrap;
     flex-shrink: 0;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
+  .pinned-chip:hover { border-color: #38bdf8; color: #fff; }
   .pinned-chip.active { background: #1e3a8a; border-color: #3b82f6; color: #60a5fa; box-shadow: 0 0 10px rgba(59, 130, 246, 0.6); }
 
   .chip-delete-btn {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.25);
     color: #f87171;
     border: none;
     border-radius: 50%;
@@ -150,7 +161,11 @@
     text-align: center;
     cursor: pointer;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  .chip-delete-btn:hover { background: #ef4444; color: #fff; }
 
   #main-container {
     flex: 1;
@@ -170,7 +185,7 @@
     -webkit-user-select: none;
   }
 
-  /* 底部工具列 (強制單行不折行，支援 iOS 安全底區) */
+  /* 底部工具列 */
   #toolbar {
     position: absolute;
     bottom: max(18px, env(safe-area-inset-bottom, 18px));
@@ -254,7 +269,7 @@
     flex-shrink: 0;
   }
 
-  /* 可收合式探索任務說明盒 (解決手機螢幕遮擋) */
+  /* 可收合式任務說明盒 (解決手機折行問題) */
   #hint-overlay {
     position: absolute;
     top: 18px;
@@ -283,6 +298,7 @@
   .hint-header strong { color: #fbbf24; font-weight: 800; }
   .hint-title-full { white-space: nowrap; }
   .hint-title-short { display: none; white-space: nowrap; }
+  
   .hint-toggle-btn {
     background: #334155;
     color: #94a3b8;
@@ -299,21 +315,22 @@
     flex-shrink: 0;
   }
   .hint-toggle-btn:hover { background: #475569; color: #fff; }
+
   #hint-overlay.collapsed {
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 18px;
     max-width: fit-content;
     width: auto;
     background: rgba(30, 41, 59, 0.92);
-    white-space: nowrap;
     border-color: #3b82f6;
+    white-space: nowrap;
   }
   #hint-overlay.collapsed .hint-title-full { display: none; }
-  #hint-overlay.collapsed .hint-title-short { display: inline-flex; align-items: center; gap: 4px; }
+  #hint-overlay.collapsed .hint-title-short { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: #fbbf24; }
   #hint-overlay.collapsed .hint-content { display: none; }
   #hint-overlay.collapsed .hint-toggle-btn { transform: rotate(45deg); }
 
-  /* 畫面右側浮動縮放與置中按鈕群 */
+  /* 畫面右側浮動縮放按鈕 */
   .canvas-floating-controls {
     position: absolute;
     right: 16px;
@@ -348,25 +365,45 @@
   @media (max-width: 640px) {
     header { padding: 6px 12px; }
     .title-group h1 { font-size: 1.05rem; }
-    .title-group p { display: none; } /* 手機隱藏副標題以釋放視野 */
+    .title-group p { display: none; }
 
+    /* 手機頂部：上下雙層架構，徹底解決按鈕擠壓出鏡與儲存無反應問題 */
+    .top-control-wrapper {
+      top: 42px;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      width: 96vw;
+    }
     .center-controller {
-      top: 44px;
       padding: 4px 12px;
       gap: 6px;
-      border-radius: 20px;
+      border-radius: 24px;
       border-width: 1.5px;
-      max-width: 96vw;
+      width: auto;
+      max-width: 100%;
     }
-    .center-controller label { font-size: 0.9rem; }
-    .ratio-slider { width: 90px; height: 8px; }
+    .lbl-full { display: none; }
+    .lbl-short { display: inline; font-size: 0.95rem; font-weight: 800; color: #f8fafc; }
+    
+    .ratio-slider { width: 100px; height: 8px; }
     #val-target-ratio { font-size: 1.05rem; min-width: 55px; }
-    .pin-btn { font-size: 0.8rem; padding: 4px 8px; border-radius: 12px; }
-    .pinned-chips-container { max-width: 130px; gap: 5px; padding-left: 6px; }
-    .pinned-chip { font-size: 0.82rem; padding: 2px 6px; border-radius: 8px; }
+    .pin-btn { font-size: 0.82rem; padding: 4px 9px; border-radius: 12px; }
+
+    .pinned-chips-container {
+      max-width: 94vw;
+      justify-content: center;
+      gap: 6px;
+      padding: 2px 4px;
+    }
+    .pinned-chip {
+      font-size: 0.82rem;
+      padding: 3px 9px;
+      border-radius: 10px;
+    }
 
     #hint-overlay {
-      top: 86px;
+      top: 106px;
       left: 10px;
       max-width: 250px;
       font-size: 0.82rem;
@@ -375,7 +412,7 @@
     #hint-overlay.collapsed { max-width: fit-content; width: auto; padding: 4px 10px; }
 
     .canvas-floating-controls {
-      top: 86px;
+      top: 106px;
       right: 10px;
       gap: 6px;
     }
@@ -406,12 +443,19 @@
   </div>
 </header>
 
-<!-- 正上方比例控制台 -->
-<div class="center-controller">
-  <label for="ratio-slider">目標比例 (k) :</label>
-  <input type="range" id="ratio-slider" class="ratio-slider" min="0.3" max="5.0" step="0.1" value="2.0">
-  <span id="val-target-ratio">2.0 : 1</span>
-  <button id="btn-pin-ratio" class="pin-btn">⭐ 儲存</button>
+<!-- 正上方比例控制台：外包層 -->
+<div class="top-control-wrapper">
+  <div class="center-controller">
+    <label for="ratio-slider">
+      <span class="lbl-full">目標比例 (k) :</span>
+      <span class="lbl-short">k :</span>
+    </label>
+    <input type="range" id="ratio-slider" class="ratio-slider" min="0.3" max="5.0" step="0.1" value="2.0">
+    <span id="val-target-ratio">2.0 : 1</span>
+    <button id="btn-pin-ratio" class="pin-btn" type="button">⭐ 儲存</button>
+  </div>
+
+  <!-- 獨立的釘選比例膠囊區 (手機在第二列居中，絕不出鏡) -->
   <div id="pinned-chips" class="pinned-chips-container"></div>
 </div>
 
@@ -425,7 +469,7 @@
     <button id="btn-zoom-reset" class="ctrl-btn" title="全景置中">⟲</button>
   </div>
 
-  <!-- 可收合的任務說明框 -->
+  <!-- 可收合的任務說明框 (收合時僅留任務二字，物理杜絕換行) -->
   <div id="hint-overlay">
     <div class="hint-header" id="hint-header">
       <span class="hint-title-full">💡 <strong>探索任務</strong></span>
@@ -489,7 +533,7 @@
   const hintHeader = document.getElementById("hint-header");
 
   let width, height, originX, originY;
-  let SCALE = 55; // 動態計算
+  let SCALE = 55;
 
   // 定點 A、B (預設位於整數格子點，解鎖後可在 X 軸自由移動)
   let mathA = { x: -2.0, y: 0.0 };
@@ -506,7 +550,7 @@
   
   // 多點觸控與拖曳狀態
   const activePointers = new Map();
-  let draggingTarget = null; // 'P' | 'A' | 'B' | null
+  let draggingTarget = null;
   let isPanningCanvas = false;
   let panStart = { x: 0, y: 0 };
   let initialPinchDistance = null;
@@ -518,7 +562,6 @@
 
   // 手機版自動收合說明框
   if (window.innerWidth < 640) {
-    // 預設在手機上展開 2.5 秒後自動收合，讓出全螢幕
     setTimeout(() => {
       hintOverlay.classList.add("collapsed");
     }, 2800);
@@ -530,13 +573,11 @@
   btnToggleHint.addEventListener("click", (e) => { e.stopPropagation(); toggleHintBox(); });
   hintHeader.addEventListener("click", toggleHintBox);
 
-  // 智慧全景自適應計算 (確保手機與電腦皆 100% 完整收納圓形與定點)
+  // 智慧全景自適應計算
   function autoFitView() {
     const isMobile = width < 640;
     if (isMobile) {
-      // 整體幾何系統寬度約 7.5 個單位 (A 到 D 約 6 單位 + 邊距)
       SCALE = Math.max(36, Math.floor(width / 7.6));
-      // 將系統核心 (x = 1.0) 居中置於螢幕中線
       originX = Math.round(width * 0.5 - 1.0 * SCALE);
       originY = Math.round(height * 0.52);
     } else {
@@ -572,7 +613,6 @@
     return Math.hypot(p1.x - p2.x, p1.y - p2.y);
   }
 
-  // 計算理論軌跡參數 (圓心與半徑)
   function getTheoreticalLocus(k) {
     if (Math.abs(k - 1.0) < 0.001) {
       return { isLine: true, xMid: (mathA.x + mathB.x) / 2 };
@@ -592,7 +632,6 @@
     };
   }
 
-  // 設定目標比例
   function setTargetRatio(newK) {
     targetK = Math.round(newK * 10) / 10;
     valTargetRatio.textContent = `${targetK.toFixed(1)} : 1`;
@@ -606,14 +645,35 @@
     setTargetRatio(parseFloat(e.target.value));
   });
 
-  // 釘選比例
-  btnPinRatio.addEventListener("click", () => {
+  // 釘選/儲存當前比例 (支援點擊與觸控，提供動態狀態回饋)
+  function handlePinRatio(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const exists = userPinnedKList.some(k => Math.abs(k - targetK) < 0.05);
     if (!exists) {
       userPinnedKList.push(targetK);
       renderPinnedChips();
+      
+      // 按鈕狀態反饋
+      btnPinRatio.textContent = "已儲存 ✅";
+      btnPinRatio.style.background = "#15803d";
+      btnPinRatio.style.borderColor = "#22c55e";
+      setTimeout(() => {
+        btnPinRatio.textContent = "⭐ 儲存";
+        btnPinRatio.style.background = "#334155";
+        btnPinRatio.style.borderColor = "#38bdf8";
+      }, 700);
+    } else {
+      btnPinRatio.textContent = "已存在 📌";
+      setTimeout(() => {
+        btnPinRatio.textContent = "⭐ 儲存";
+      }, 600);
     }
-  });
+  }
+
+  btnPinRatio.addEventListener("click", handlePinRatio);
 
   function renderPinnedChips() {
     pinnedChipsContainer.innerHTML = "";
@@ -722,7 +782,7 @@
     const scrB = toScreen(mathB);
     const scrP = toScreen(mathP);
 
-    // 理論圓形 (若揭曉)
+    // 理論圓形
     if (showTrueCircle) {
       const circ = getTheoreticalLocus(targetK);
       if (circ.isLine) {
@@ -858,7 +918,7 @@
     ctx.fillStyle = "#f87171";
     ctx.fillText(textPB, posPB.x + 9, posPB.y + 24);
 
-    // 3. 中央比值大格子 (命中時直接展現目標比值)
+    // 3. 中央比值大格子
     const textRatio = isHit 
       ? `🎯 ${targetK.toFixed(1)} : 1` 
       : `比值: ${ratio.toFixed(2)}`;
@@ -880,9 +940,7 @@
     ctx.fillText(textRatio, posRatio.x + 14, posRatio.y + 30);
   }
 
-  // ==============================================================
-  // 🖐️ 手勢事件：點拖曳 ＋ 畫布單指平移 ＋ 雙指縮放
-  // ==============================================================
+  // 手勢事件
   function onPointerDown(e) {
     activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -893,7 +951,6 @@
     const scrB = toScreen(mathB);
 
     if (activePointers.size === 1) {
-      // 優先判定是否抓取 P, A, B 點
       if (chkUnlockAB.checked && dist(mouseScr, scrA) < 40) {
         draggingTarget = 'A';
         stampedPoints = [];
@@ -903,13 +960,11 @@
       } else if (dist(mouseScr, scrP) < 50) {
         draggingTarget = 'P';
       } else {
-        // 點擊空白處：啟動畫布單指平移
         isPanningCanvas = true;
         panStart = { x: e.clientX - originX, y: e.clientY - originY };
       }
       try { canvas.setPointerCapture(e.pointerId); } catch(err) {}
     } else if (activePointers.size === 2) {
-      // 雙指同時觸碰：切換至雙指縮放 (Pinch-to-zoom)
       draggingTarget = null;
       isPanningCanvas = false;
       const pts = Array.from(activePointers.values());
@@ -922,7 +977,6 @@
     if (!activePointers.has(e.pointerId)) return;
     activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    // 1. 雙指縮放處理
     if (activePointers.size >= 2 && initialPinchDistance) {
       const pts = Array.from(activePointers.values());
       const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
@@ -932,7 +986,6 @@
       return;
     }
 
-    // 2. 單指畫布平移處理
     if (isPanningCanvas) {
       originX = Math.round(e.clientX - panStart.x);
       originY = Math.round(e.clientY - panStart.y);
@@ -940,7 +993,6 @@
       return;
     }
 
-    // 3. 點位拖曳處理
     if (!draggingTarget) {
       const rect = canvas.getBoundingClientRect();
       const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -1009,7 +1061,6 @@
   window.addEventListener("pointerup", onPointerUp);
   window.addEventListener("pointercancel", onPointerUp);
 
-  // 畫面縮放控制按鈕事件
   btnZoomIn.addEventListener("click", () => {
     SCALE = Math.min(160, Math.round(SCALE * 1.2));
     draw();
