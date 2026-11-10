@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>幾何動點軌跡 - 互動探索實驗室 (V8 雙層比例與儲存修復版)</title>
+<title>幾何動點軌跡 - 互動探索實驗室 (V13 解鎖拉桿固定寬度抗抖動版)</title>
 <style>
   :root {
     --bg-color: #0b1120;
-    --panel-bg: rgba(15, 23, 42, 0.92);
+    --panel-bg: rgba(15, 23, 42, 0.94);
     --border-color: #334155;
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
@@ -36,7 +36,7 @@
   }
 
   header {
-    padding: 10px 24px;
+    padding: 8px 20px;
     background: var(--panel-bg);
     border-bottom: 1.5px solid var(--border-color);
     display: flex;
@@ -47,83 +47,197 @@
     flex-shrink: 0;
   }
 
-  .title-group h1 { font-size: 1.35rem; font-weight: 800; color: #fff; letter-spacing: 0.6px; white-space: nowrap; }
-  .title-group p { font-size: 0.95rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; }
+  .title-group h1 { font-size: 1.25rem; font-weight: 800; color: #fff; letter-spacing: 0.6px; white-space: nowrap; }
+  .title-group p { font-size: 0.9rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; }
 
-  /* 頂部控制台外包層 (桌機橫向排版、手機自動折為上下兩層) */
+  /* 頂部獨立控制器外包層 (桌機橫向排版、手機自動折為上下兩層) */
   .top-control-wrapper {
     position: absolute;
-    top: 10px;
+    top: 8px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     z-index: 20;
-    max-width: 95vw;
+    max-width: 96vw;
     pointer-events: auto;
   }
 
   .center-controller {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     background: #1e293b;
-    padding: 8px 18px;
+    padding: 6px 16px;
     border-radius: 40px;
     border: 2px solid #3b82f6;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     white-space: nowrap;
     flex-shrink: 0;
+    transition: all 0.2s ease;
   }
-  .center-controller label { font-size: 1.1rem; font-weight: 800; color: #f8fafc; white-space: nowrap; }
-  .lbl-short { display: none; }
   
-  .ratio-slider {
-    width: 140px;
-    height: 8px;
+  .ratio-eq-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #f8fafc;
+    white-space: nowrap;
+  }
+
+  /* 分數群組容器 */
+  .fraction-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.2s ease;
+  }
+
+  .slider-unit {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 3px 8px;
+    border-radius: 14px;
+    border: 1px solid #475569;
+  }
+  .slider-tag {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+  .num-slider {
+    width: 85px;
+    height: 7px;
     cursor: pointer;
     accent-color: #38bdf8;
     flex-shrink: 0;
   }
-  #val-target-ratio {
+  .val-num {
     font-family: monospace;
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 800;
     color: #38bdf8;
-    min-width: 75px;
+    min-width: 22px;
+    text-align: center;
+  }
+
+  .fraction-divider {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #64748b;
+  }
+
+  .eq-ratio-text {
+    font-size: 1.0rem;
+    font-weight: 800;
+    color: #fbbf24;
+    white-space: nowrap;
+    margin: 0 2px;
+  }
+
+  /* 分數模式下的純整數比徽章 (3 / 7) */
+  .result-badge {
+    background: #0f172a;
+    border: 1.5px solid #38bdf8;
+    color: #38bdf8;
+    font-family: monospace;
+    font-size: 1.15rem;
+    font-weight: 900;
+    padding: 3px 12px;
+    border-radius: 12px;
+    min-width: 60px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* 解鎖模式下的連續滑桿容器 (0.1 步進，顯示為 3.2 (16 / 5)，固定寬度絕不跳動) */
+  .continuous-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.7);
+    padding: 3px 10px;
+    border-radius: 14px;
+    border: 1.5px solid #38bdf8;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+    width: 260px;
+    flex-shrink: 0;
+    justify-content: space-between;
+  }
+  .continuous-slider {
+    width: 115px;
+    height: 7px;
+    cursor: pointer;
+    accent-color: #38bdf8;
+    flex-shrink: 0;
+  }
+  .val-continuous {
+    font-family: monospace;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #38bdf8;
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
     text-align: center;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  /* 解鎖按鈕 (鎖頭 icon) */
+  .unlock-ratio-btn {
+    background: #334155;
+    border: 1.5px solid #64748b;
+    color: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 1.0rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .unlock-ratio-btn:hover { background: #475569; border-color: #38bdf8; }
+  .unlock-ratio-btn.unlocked {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
   }
 
   .pin-btn {
     background: #334155;
     color: #f1f5f9;
     border: 2px solid #38bdf8;
-    padding: 6px 14px;
+    padding: 5px 12px;
     border-radius: 20px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     white-space: nowrap;
     flex-shrink: 0;
   }
   .pin-btn:hover { background: #0284c7; color: #fff; transform: translateY(-1px); }
   .pin-btn:active { transform: scale(0.95); }
 
-  /* 釘選 K 值膠囊容器 (獨立自適應) */
+  /* 釘選比例膠囊容器 */
   .pinned-chips-container {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
     white-space: nowrap;
-    max-width: 400px;
+    max-width: 360px;
     padding: 2px 4px;
   }
   .pinned-chips-container::-webkit-scrollbar { height: 3px; }
@@ -133,14 +247,14 @@
     background: #0f172a;
     border: 1.5px solid #64748b;
     color: #e2e8f0;
-    padding: 5px 12px;
+    padding: 4px 10px;
     border-radius: 14px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 800;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     white-space: nowrap;
     flex-shrink: 0;
     transition: all 0.15s ease;
@@ -154,10 +268,10 @@
     color: #f87171;
     border: none;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 0.85rem;
-    line-height: 16px;
+    width: 17px;
+    height: 17px;
+    font-size: 0.8rem;
+    line-height: 15px;
     text-align: center;
     cursor: pointer;
     flex-shrink: 0;
@@ -185,18 +299,18 @@
     -webkit-user-select: none;
   }
 
-  /* 底部工具列 */
+  /* 底部工具列：強制完全單行，絕不折行 */
   #toolbar {
     position: absolute;
     bottom: max(18px, env(safe-area-inset-bottom, 18px));
     left: 50%;
     transform: translateX(-50%);
     background: var(--panel-bg);
-    padding: 8px 20px;
+    padding: 8px 18px;
     border-radius: 50px;
     border: 2px solid var(--border-color);
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(16px);
@@ -209,14 +323,14 @@
     background: #334155;
     color: #f1f5f9;
     border: none;
-    padding: 8px 18px;
+    padding: 8px 16px;
     border-radius: 30px;
-    font-size: 1.05rem;
+    font-size: 1.0rem;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     white-space: nowrap;
     flex-shrink: 0;
     transition: all 0.15s ease;
@@ -232,7 +346,7 @@
     font-weight: 700;
     color: #f8fafc;
     background: rgba(30, 41, 59, 0.85);
-    padding: 6px 14px;
+    padding: 6px 12px;
     border-radius: 20px;
     border: 1.5px solid #38bdf8;
     cursor: pointer;
@@ -245,14 +359,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 3px;
+    gap: 2px;
     flex-shrink: 0;
   }
   .checkbox-label-secondary {
     display: flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.8rem;
+    gap: 4px;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
@@ -263,40 +377,41 @@
 
   .toolbar-divider {
     width: 1px;
-    height: 24px;
+    height: 22px;
     background: #475569;
-    margin: 0 2px;
+    margin: 0 1px;
     flex-shrink: 0;
   }
 
   /* 可收合式任務說明盒 (解決手機折行問題) */
   #hint-overlay {
     position: absolute;
-    top: 18px;
-    left: 20px;
+    top: 16px;
+    left: 18px;
     background: rgba(15, 23, 42, 0.92);
     border: 1.5px solid var(--border-color);
-    padding: 12px 18px;
+    padding: 10px 16px;
     border-radius: 12px;
-    max-width: 380px;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 0.92rem;
+    line-height: 1.55;
     color: #cbd5e1;
+    max-width: 320px;
+    pointer-events: auto;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(12px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 15;
-    transition: all 0.25s ease;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
   }
   .hint-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
+    margin-bottom: 5px;
     white-space: nowrap;
-    gap: 8px;
   }
-  .hint-header strong { color: #fbbf24; font-weight: 800; }
-  .hint-title-full { white-space: nowrap; }
+  .hint-header strong { color: #fbbf24; }
+  .hint-title-full { display: inline-flex; align-items: center; gap: 4px; }
   .hint-title-short { display: none; white-space: nowrap; }
   
   .hint-toggle-btn {
@@ -317,7 +432,7 @@
   .hint-toggle-btn:hover { background: #475569; color: #fff; }
 
   #hint-overlay.collapsed {
-    padding: 5px 12px;
+    padding: 4px 10px;
     border-radius: 18px;
     max-width: fit-content;
     width: auto;
@@ -333,8 +448,8 @@
   /* 畫面右側浮動縮放按鈕 */
   .canvas-floating-controls {
     position: absolute;
-    right: 16px;
-    top: 100px;
+    right: 14px;
+    top: 90px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -347,7 +462,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    font-size: 1.05rem;
+    font-size: 1.0rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -363,73 +478,100 @@
      📱 手機專屬極致適配 (螢幕寬度小於 640px)
      ============================================================== */
   @media (max-width: 640px) {
-    header { padding: 6px 12px; }
-    .title-group h1 { font-size: 1.05rem; }
+    header { padding: 5px 10px; }
+    .title-group h1 { font-size: 1.0rem; }
     .title-group p { display: none; }
 
-    /* 手機頂部：上下雙層架構，徹底解決按鈕擠壓出鏡與儲存無反應問題 */
+    /* 手機頂部：雙層緊湊架構 */
     .top-control-wrapper {
-      top: 42px;
+      top: 40px;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
-      width: 96vw;
+      gap: 4px;
+      width: 98vw;
     }
     .center-controller {
-      padding: 4px 12px;
-      gap: 6px;
-      border-radius: 24px;
+      padding: 4px 8px;
+      gap: 4px;
+      border-radius: 20px;
       border-width: 1.5px;
       width: auto;
       max-width: 100%;
     }
-    .lbl-full { display: none; }
-    .lbl-short { display: inline; font-size: 0.95rem; font-weight: 800; color: #f8fafc; }
-    
-    .ratio-slider { width: 100px; height: 8px; }
-    #val-target-ratio { font-size: 1.05rem; min-width: 55px; }
-    .pin-btn { font-size: 0.82rem; padding: 4px 9px; border-radius: 12px; }
+    .ratio-eq-label { font-size: 0.85rem; }
+
+    .slider-unit {
+      padding: 2px 4px;
+      gap: 2px;
+    }
+    .slider-tag { font-size: 0.7rem; }
+    .num-slider { width: 50px; height: 6px; }
+    .val-num { font-size: 0.95rem; min-width: 16px; }
+    .fraction-divider { font-size: 0.95rem; }
+    .eq-ratio-text { font-size: 0.82rem; margin: 0 1px; }
+
+    .result-badge { font-size: 0.88rem; padding: 2px 6px; min-width: 45px; }
+
+    .continuous-slider-group {
+      padding: 2px 6px;
+      gap: 4px;
+      width: 195px;
+      flex-shrink: 0;
+      justify-content: space-between;
+    }
+    .continuous-slider { width: 75px; height: 6px; flex-shrink: 0; }
+    .val-continuous {
+      font-size: 0.82rem;
+      width: 105px;
+      min-width: 105px;
+      max-width: 105px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .unlock-ratio-btn { font-size: 0.85rem; padding: 3px 6px; border-radius: 10px; }
+    .pin-btn { font-size: 0.78rem; padding: 3px 8px; border-radius: 12px; }
 
     .pinned-chips-container {
-      max-width: 94vw;
+      max-width: 96vw;
       justify-content: center;
-      gap: 6px;
-      padding: 2px 4px;
+      gap: 5px;
+      padding: 1px 2px;
     }
     .pinned-chip {
-      font-size: 0.82rem;
-      padding: 3px 9px;
+      font-size: 0.8rem;
+      padding: 2px 8px;
       border-radius: 10px;
     }
 
     #hint-overlay {
-      top: 106px;
+      top: 105px;
       left: 10px;
-      max-width: 250px;
-      font-size: 0.82rem;
-      padding: 8px 12px;
+      max-width: 240px;
+      font-size: 0.8rem;
+      padding: 6px 10px;
     }
-    #hint-overlay.collapsed { max-width: fit-content; width: auto; padding: 4px 10px; }
+    #hint-overlay.collapsed { max-width: fit-content; width: auto; padding: 4px 8px; }
 
     .canvas-floating-controls {
-      top: 106px;
+      top: 105px;
       right: 10px;
       gap: 6px;
     }
-    .ctrl-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+    .ctrl-btn { width: 30px; height: 30px; font-size: 0.85rem; }
 
     #toolbar {
       bottom: max(10px, env(safe-area-inset-bottom, 10px));
-      padding: 6px 12px;
-      gap: 6px;
+      padding: 5px 10px;
+      gap: 5px;
       border-radius: 30px;
       max-width: 98vw;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
     }
-    .btn { font-size: 0.82rem; padding: 6px 10px; border-radius: 20px; }
-    .checkbox-label-primary { font-size: 0.78rem; padding: 4px 8px; border-radius: 12px; gap: 3px; }
-    .checkbox-label-primary input { width: 13px; height: 13px; }
-    .checkbox-label-secondary { font-size: 0.68rem; gap: 3px; }
+    .btn { font-size: 0.8rem; padding: 5px 8px; border-radius: 18px; }
+    .checkbox-label-primary { font-size: 0.76rem; padding: 3px 6px; border-radius: 10px; gap: 2px; }
+    .secondary-stacked-container { gap: 1px; }
+    .checkbox-label-secondary { font-size: 0.68rem; gap: 2px; }
     .checkbox-label-secondary input { width: 11px; height: 11px; }
   }
 </style>
@@ -439,19 +581,51 @@
 <header>
   <div class="title-group">
     <h1>幾何動點軌跡探索實驗室</h1>
-    <p>拖曳動點 P，尋找所有滿足「PA : PB = k : 1」的未知神秘曲線</p>
+    <p>拖曳動點 P，尋找所有滿足「PA / PB = k」的未知神秘曲線</p>
   </div>
 </header>
 
-<!-- 正上方比例控制台：外包層 -->
+<!-- 頂部獨立控制器外包層 -->
 <div class="top-control-wrapper">
   <div class="center-controller">
-    <label for="ratio-slider">
-      <span class="lbl-full">目標比例 (k) :</span>
-      <span class="lbl-short">k :</span>
-    </label>
-    <input type="range" id="ratio-slider" class="ratio-slider" min="0.3" max="5.0" step="0.1" value="2.0">
-    <span id="val-target-ratio">2.0 : 1</span>
+    <div class="ratio-eq-label">
+      <span>PA / PB =</span>
+    </div>
+
+    <!-- 分數拉桿群組 (鎖定模式下顯示) -->
+    <div id="fraction-controls" class="fraction-controls-group">
+      <!-- 分子滑桿 (1 ~ 10) -->
+      <div class="slider-unit">
+        <span class="slider-tag">分子</span>
+        <input type="range" id="slider-m" class="num-slider" min="1" max="10" step="1" value="3">
+        <b id="disp-m" class="val-num">3</b>
+      </div>
+
+      <span class="fraction-divider">/</span>
+
+      <!-- 分母滑桿 (1 ~ 10) -->
+      <div class="slider-unit">
+        <span class="slider-tag">分母</span>
+        <input type="range" id="slider-n" class="num-slider" min="1" max="10" step="1" value="7">
+        <b id="disp-n" class="val-num">7</b>
+      </div>
+    </div>
+
+    <!-- 數學等號與比值文字 -->
+    <span class="eq-ratio-text">= 比值</span>
+
+    <!-- 分數模式靜態徽章 (3 / 7) -->
+    <div id="badge-fraction" class="result-badge">3 / 7</div>
+
+    <!-- 解鎖模式下的連續滑桿 (0.1 步進，顯示為 3.2 (16 / 5)) -->
+    <div id="continuous-controls" class="continuous-slider-group" style="display: none;">
+      <input type="range" id="slider-continuous-k" class="continuous-slider" min="0.1" max="5.0" step="0.1" value="3.2">
+      <b id="disp-continuous-k" class="val-continuous">3.2 (16 / 5)</b>
+    </div>
+
+    <!-- 🔒/🔓 解鎖連續比值按鈕 -->
+    <button id="btn-toggle-unlock-ratio" class="unlock-ratio-btn" title="解鎖為連續比值拉桿">🔒</button>
+
     <button id="btn-pin-ratio" class="pin-btn" type="button">⭐ 儲存</button>
   </div>
 
@@ -478,44 +652,61 @@
     </div>
     <div id="hint-content" class="hint-content">
       用手指或滑鼠按住黃色動點 <strong>P</strong> 拖曳。<br>
-      長度與比值已<strong>顯示</strong>在動點 <strong>P</strong> 兩側與上方。<br>
-      當比值符合目標時會爆發亮綠色，猜猜看所有綠點最後會拼出什麼形狀？<br>
-      <span style="font-size:0.85em; color:#94a3b8;">* 提示：單指滑動空白處可平移畫布，雙指可自由縮放！</span>
+      動點上方比值已固定目標分母，看著分子逼近目標！<br>
+      當比值符合目標時，會爆發亮綠色並留下純淨軌跡，猜猜看所有綠點最後會拼出什麼形狀？
     </div>
   </div>
 
+  <!-- 底部固定工具列 (完全單行白話排版) -->
   <div id="toolbar">
-    <!-- 1. 解鎖 A、B 點 (100% 單行) -->
-    <label class="checkbox-label-primary" title="勾選後可直接在 X 軸上用手指/滑鼠左右拖曳 A、B 定點位置">
-      <input type="checkbox" id="chk-unlock-ab"> 🔓 解鎖 A、B 點
+    <label class="checkbox-label-primary">
+      <input type="checkbox" id="chk-unlock-ab">
+      <span>🔓 解鎖 A、B (X軸拖曳)</span>
     </label>
 
+    <button id="btn-toggle-circle" class="btn">
+      <span id="circle-status-dot" style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#ef4444; border:1px solid #fff;"></span>
+      <span>揭曉理論軌跡</span>
+    </button>
+    
+    <button id="btn-clear" class="btn" style="background:#991b1b;">
+      <span>🗑️ 清空足跡</span>
+    </button>
+
     <div class="toolbar-divider"></div>
 
-    <!-- 2. 核心操作按鈕 -->
-    <button class="btn" id="btn-toggle-circle">⭕ 揭曉理論軌跡</button>
-    <button class="btn" id="btn-clear" style="background:#7f1d1d;">🗑️ 清空足跡</button>
-
-    <div class="toolbar-divider"></div>
-
-    <!-- 3. 最右側：次要小字選項 (上下雙列) -->
     <div class="secondary-stacked-container">
-      <label class="checkbox-label-secondary" title="動點符合比值時自動蓋下足跡">
-        <input type="checkbox" id="chk-auto-stamp" checked> 命中自動留痕
+      <label class="checkbox-label-secondary">
+        <input type="checkbox" id="chk-auto-stamp" checked>
+        <span>命中自動留痕</span>
       </label>
-      <label class="checkbox-label-secondary" title="消除手震散斑，使落點平滑對齊">
-        <input type="checkbox" id="chk-snap" checked> 幾何精密吸附
+      <label class="checkbox-label-secondary">
+        <input type="checkbox" id="chk-snap" checked>
+        <span>幾何精密吸附</span>
       </label>
     </div>
   </div>
 </div>
 
 <script>
+(() => {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
-  const ratioSlider = document.getElementById("ratio-slider");
-  const valTargetRatio = document.getElementById("val-target-ratio");
+  // 分數控制項
+  const fractionControls = document.getElementById("fraction-controls");
+  const sliderM = document.getElementById("slider-m");
+  const sliderN = document.getElementById("slider-n");
+  const dispM = document.getElementById("disp-m");
+  const dispN = document.getElementById("disp-n");
+  const badgeFraction = document.getElementById("badge-fraction");
+
+  // 連續比值控制項
+  const continuousControls = document.getElementById("continuous-controls");
+  const sliderContinuousK = document.getElementById("slider-continuous-k");
+  const dispContinuousK = document.getElementById("disp-continuous-k");
+  const btnToggleUnlockRatio = document.getElementById("btn-toggle-unlock-ratio");
+
   const btnPinRatio = document.getElementById("btn-pin-ratio");
   const pinnedChipsContainer = document.getElementById("pinned-chips");
 
@@ -539,11 +730,24 @@
   let mathA = { x: -2.0, y: 0.0 };
   let mathB = { x: 1.0, y: 0.0 };
   
-  // 動態目標比值 k
-  let targetK = 2.0;
+  // 模式狀態：false 為整數分數雙滑桿模式 (預設)，true 為連續拉桿模式
+  let isContinuousMode = false;
 
-  // 使用者自訂儲存的 K 值清單
-  let userPinnedKList = [];
+  // 分數目標值 (預設 3 / 7)
+  let targetM = 3;
+  let targetN = 7;
+
+  // 實質計算用的比值 k
+  let targetK = 3 / 7;
+
+  // 使用者自訂儲存的比例清單
+  let userPinnedList = [
+    { mode: 'fraction', m: 3, n: 7, label: '3 / 7' },
+    { mode: 'fraction', m: 1, n: 2, label: '1 / 2' },
+    { mode: 'fraction', m: 2, n: 1, label: '2 / 1' },
+    { mode: 'fraction', m: 3, n: 2, label: '3 / 2' },
+    { mode: 'fraction', m: 1, n: 1, label: '1 / 1' }
+  ];
 
   // 動點 P (初始位置)
   let mathP = { x: 0.0, y: 1.5 };
@@ -559,6 +763,23 @@
   // 紀錄命中點痕跡
   let stampedPoints = [];
   let showTrueCircle = false;
+
+  // 最大公因數計算 (GCD)
+  function gcd(a, b) {
+    a = Math.abs(a);
+    b = Math.abs(b);
+    return b === 0 ? a : gcd(b, a % b);
+  }
+
+  // 0.1 步進小數精確轉為最簡整數比
+  function decimalToFraction(kVal) {
+    const rounded = Math.round(kVal * 10);
+    const g = gcd(rounded, 10);
+    return {
+      m: rounded / g,
+      n: 10 / g
+    };
+  }
 
   // 手機版自動收合說明框
   if (window.innerWidth < 640) {
@@ -578,85 +799,181 @@
     const isMobile = width < 640;
     if (isMobile) {
       SCALE = Math.max(36, Math.floor(width / 7.6));
-      originX = Math.round(width * 0.5 - 1.0 * SCALE);
-      originY = Math.round(height * 0.52);
+      originX = width * 0.42;
+      originY = height * 0.50;
     } else {
-      SCALE = 70;
-      originX = Math.round(width * 0.45);
-      originY = Math.round(height * 0.54);
+      SCALE = Math.max(50, Math.floor(height / 11));
+      originX = width * 0.45;
+      originY = height * 0.52;
     }
   }
 
   function resize() {
-    width = canvas.width = canvas.parentElement.clientWidth;
-    height = canvas.height = canvas.parentElement.clientHeight;
-    autoFitView();
+    const dpr = window.devicePixelRatio || 1;
+    width = canvas.parentElement.clientWidth;
+    height = canvas.parentElement.clientHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.resetTransform();
+    ctx.scale(dpr, dpr);
+
+    if (originX === undefined || originY === undefined) {
+      autoFitView();
+    }
     draw();
   }
   window.addEventListener("resize", resize);
 
-  function toScreen(mathPt) {
-    return {
-      x: originX + mathPt.x * SCALE,
-      y: originY - mathPt.y * SCALE
-    };
-  }
+  function toScreenX(x) { return originX + x * SCALE; }
+  function toScreenY(y) { return originY - y * SCALE; }
+  function toScreen(x, y) { return { x: toScreenX(x), y: toScreenY(y) }; }
+  function toMathX(px) { return (px - originX) / SCALE; }
+  function toMathY(py) { return (originY - py) / SCALE; }
 
-  function toMath(screenPt) {
-    return {
-      x: (screenPt.x - originX) / SCALE,
-      y: (originY - screenPt.y) / SCALE
-    };
-  }
-
-  function dist(p1, p2) {
-    return Math.hypot(p1.x - p2.x, p1.y - p2.y);
-  }
-
-  function getTheoreticalLocus(k) {
-    if (Math.abs(k - 1.0) < 0.001) {
-      return { isLine: true, xMid: (mathA.x + mathB.x) / 2 };
+  // 幾何軌跡計算：區分「阿波羅尼斯圓」與「k=1 中垂線退化」
+  function getApolloniusLocus() {
+    // 當比值等於 1.0 時，退化為 AB 線段之中垂線
+    if (targetM === targetN) {
+      const midX = (mathA.x + mathB.x) / 2;
+      return {
+        isLine: true,
+        lineX: midX
+      };
     }
-    const cx = (mathA.x + k * mathB.x) / (1 + k);
-    const dx = (k * mathB.x - mathA.x) / (k - 1);
-    
-    const centerX = (cx + dx) / 2;
-    const radius = Math.abs(dx - cx) / 2;
+
+    // 一般情況：內分點 C 與 外分點 D
+    const cx = (targetN * mathA.x + targetM * mathB.x) / (targetN + targetM);
+    const dx = (targetM * mathB.x - targetN * mathA.x) / (targetM - targetN);
+
+    const ox = (cx + dx) / 2;
+    const oy = 0;
+    const r = Math.abs(dx - cx) / 2;
+
     return {
       isLine: false,
-      centerX: centerX,
-      centerY: 0,
-      radius: radius,
-      ptC: { x: cx, y: 0 },
-      ptD: { x: dx, y: 0 }
+      ox,
+      oy,
+      r,
+      cx,
+      dx
     };
   }
 
-  function setTargetRatio(newK) {
-    targetK = Math.round(newK * 10) / 10;
-    valTargetRatio.textContent = `${targetK.toFixed(1)} : 1`;
-    ratioSlider.value = targetK;
-    updateChipHighlights();
+  // 分數雙滑桿更新
+  function updateFractionRatio() {
+    targetM = parseInt(sliderM.value, 10);
+    targetN = parseInt(sliderN.value, 10);
+    targetK = targetM / targetN;
+
+    dispM.textContent = targetM;
+    dispN.textContent = targetN;
+    badgeFraction.textContent = `${targetM} / ${targetN}`;
+
+    // 同步連續拉桿對齊 (取小數一位)
+    const roundedK = Math.min(Math.max(Math.round(targetK * 10) / 10, 0.1), 5.0);
+    sliderContinuousK.value = roundedK.toFixed(1);
+    const frac = decimalToFraction(roundedK);
+    dispContinuousK.textContent = `${roundedK.toFixed(1)} (${frac.m} / ${frac.n})`;
+
+    renderPinnedChips();
     stampedPoints = [];
     draw();
   }
 
-  ratioSlider.addEventListener("input", (e) => {
-    setTargetRatio(parseFloat(e.target.value));
+  sliderM.addEventListener("input", updateFractionRatio);
+  sliderN.addEventListener("input", updateFractionRatio);
+
+  // 連續比值拉桿更新 (0.1 步進，平滑漸變，顯示為 3.2 (16 / 5))
+  function updateContinuousRatio() {
+    targetK = parseFloat(sliderContinuousK.value);
+    const frac = decimalToFraction(targetK);
+    targetM = frac.m;
+    targetN = frac.n;
+
+    // 格式：3.2 (16 / 5)
+    dispContinuousK.textContent = `${targetK.toFixed(1)} (${targetM} / ${targetN})`;
+
+    // 若在範圍內同步更新分數滑桿
+    if (targetM <= 10 && targetN <= 10) {
+      sliderM.value = targetM;
+      sliderN.value = targetN;
+      dispM.textContent = targetM;
+      dispN.textContent = targetN;
+      badgeFraction.textContent = `${targetM} / ${targetN}`;
+    }
+
+    renderPinnedChips();
+    stampedPoints = [];
+    draw();
+  }
+
+  sliderContinuousK.addEventListener("input", updateContinuousRatio);
+
+  // 點擊解鎖按鈕：切換分數模式與連續拉桿模式
+  btnToggleUnlockRatio.addEventListener("click", () => {
+    isContinuousMode = !isContinuousMode;
+
+    if (isContinuousMode) {
+      // 進入連續拉桿模式
+      btnToggleUnlockRatio.textContent = "🔓";
+      btnToggleUnlockRatio.classList.add("unlocked");
+      btnToggleUnlockRatio.title = "已解鎖連續比值拉桿 (平滑 0.1 步進，點擊鎖回)";
+
+      badgeFraction.style.display = "none";
+      continuousControls.style.display = "flex";
+
+      fractionControls.style.opacity = "0.35";
+      fractionControls.style.pointerEvents = "none";
+
+      const roundedK = Math.min(Math.max(Math.round(targetK * 10) / 10, 0.1), 5.0);
+      sliderContinuousK.value = roundedK.toFixed(1);
+      updateContinuousRatio();
+    } else {
+      // 鎖回整數分數雙滑桿模式
+      btnToggleUnlockRatio.textContent = "🔒";
+      btnToggleUnlockRatio.classList.remove("unlocked");
+      btnToggleUnlockRatio.title = "已鎖定分數模式 (點擊解鎖為連續拉桿)";
+
+      badgeFraction.style.display = "block";
+      continuousControls.style.display = "none";
+
+      fractionControls.style.opacity = "1";
+      fractionControls.style.pointerEvents = "auto";
+
+      updateFractionRatio();
+    }
   });
 
-  // 釘選/儲存當前比例 (支援點擊與觸控，提供動態狀態回饋)
+  // 釘選/儲存當前比例
   function handlePinRatio(e) {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    const exists = userPinnedKList.some(k => Math.abs(k - targetK) < 0.05);
+
+    let newItem;
+    if (isContinuousMode) {
+      newItem = {
+        mode: 'continuous',
+        k: targetK,
+        m: targetM,
+        n: targetN,
+        label: `${targetK.toFixed(1)} (${targetM}/${targetN})`
+      };
+    } else {
+      newItem = {
+        mode: 'fraction',
+        m: targetM,
+        n: targetN,
+        label: `${targetM} / ${targetN}`
+      };
+    }
+
+    const exists = userPinnedList.some(item => item.label === newItem.label);
     if (!exists) {
-      userPinnedKList.push(targetK);
+      userPinnedList.push(newItem);
       renderPinnedChips();
       
-      // 按鈕狀態反饋
       btnPinRatio.textContent = "已儲存 ✅";
       btnPinRatio.style.background = "#15803d";
       btnPinRatio.style.borderColor = "#22c55e";
@@ -677,18 +994,37 @@
 
   function renderPinnedChips() {
     pinnedChipsContainer.innerHTML = "";
-    userPinnedKList.forEach((kVal, idx) => {
+    userPinnedList.forEach((item, idx) => {
       const chip = document.createElement("div");
       chip.className = "pinned-chip";
-      if (Math.abs(kVal - targetK) < 0.05) chip.classList.add("active");
+
+      if (item.m === targetM && item.n === targetN) {
+        chip.classList.add("active");
+      }
 
       const textSpan = document.createElement("span");
-      textSpan.textContent = `${kVal.toFixed(1)} : 1`;
+      textSpan.textContent = item.label;
       chip.appendChild(textSpan);
 
       chip.addEventListener("click", (e) => {
         if (e.target.classList.contains("chip-delete-btn")) return;
-        setTargetRatio(kVal);
+        
+        targetM = item.m;
+        targetN = item.n;
+        targetK = targetM / targetN;
+
+        if (item.mode === 'continuous') {
+          if (!isContinuousMode) btnToggleUnlockRatio.click();
+          sliderContinuousK.value = item.k.toFixed(1);
+          updateContinuousRatio();
+        } else {
+          if (isContinuousMode) btnToggleUnlockRatio.click();
+          if (targetM <= 10 && targetN <= 10) {
+            sliderM.value = targetM;
+            sliderN.value = targetN;
+          }
+          updateFractionRatio();
+        }
       });
 
       const delBtn = document.createElement("button");
@@ -697,7 +1033,7 @@
       delBtn.title = "刪除此比例";
       delBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        userPinnedKList.splice(idx, 1);
+        userPinnedList.splice(idx, 1);
         renderPinnedChips();
       });
       chip.appendChild(delBtn);
@@ -706,367 +1042,33 @@
     });
   }
 
-  function updateChipHighlights() {
-    const chips = pinnedChipsContainer.querySelectorAll(".pinned-chip");
-    chips.forEach((chip, idx) => {
-      const kVal = userPinnedKList[idx];
-      chip.classList.toggle("active", Math.abs(kVal - targetK) < 0.05);
-    });
-  }
-
-  function drawRoundedRect(ctx, x, y, width, height, radius, fill, stroke) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-    if (fill) ctx.fill();
-    if (stroke) ctx.stroke();
-  }
-
-  function checkHitAndStamp() {
-    const dPA = dist(mathP, mathA);
-    const dPB = dist(mathP, mathB);
-    const ratio = dPB === 0 ? 999 : (dPA / dPB);
-    
-    const tolerance = 0.05 * targetK;
-    const isHit = Math.abs(ratio - targetK) <= tolerance;
-
-    if (isHit && chkAutoStamp.checked) {
-      let ptToSave = { x: mathP.x, y: mathP.y };
-
-      if (chkSnap.checked) {
-        const circ = getTheoreticalLocus(targetK);
-        if (circ.isLine) {
-          ptToSave.x = circ.xMid;
-        } else {
-          const angle = Math.atan2(mathP.y - circ.centerY, mathP.x - circ.centerX);
-          ptToSave.x = circ.centerX + circ.radius * Math.cos(angle);
-          ptToSave.y = circ.centerY + circ.radius * Math.sin(angle);
-        }
-      }
-
-      const last = stampedPoints[stampedPoints.length - 1];
-      if (!last || dist(last, ptToSave) > 0.04) {
-        stampedPoints.push(ptToSave);
-      }
-    }
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, width, height);
-
-    // 網格線
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "#162238";
-    for (let x = originX % SCALE; x < width; x += SCALE) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
-    }
-    for (let y = originY % SCALE; y < height; y += SCALE) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
-    }
-
-    // 坐標軸
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#334155";
-    ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(width, originY); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, height); ctx.stroke();
-
-    const scrA = toScreen(mathA);
-    const scrB = toScreen(mathB);
-    const scrP = toScreen(mathP);
-
-    // 理論圓形
+  // 工具列開關事件
+  btnToggleCircle.addEventListener("click", () => {
+    showTrueCircle = !showTrueCircle;
+    const dot = document.getElementById("circle-status-dot");
     if (showTrueCircle) {
-      const circ = getTheoreticalLocus(targetK);
-      if (circ.isLine) {
-        const scrMidX = originX + circ.xMid * SCALE;
-        ctx.strokeStyle = "rgba(251, 146, 60, 0.75)";
-        ctx.lineWidth = 3.5;
-        ctx.setLineDash([8, 6]);
-        ctx.beginPath(); ctx.moveTo(scrMidX, 0); ctx.lineTo(scrMidX, height); ctx.stroke();
-        ctx.setLineDash([]);
-      } else {
-        const center = toScreen({ x: circ.centerX, y: circ.centerY });
-        ctx.beginPath();
-        ctx.arc(center.x, center.y, circ.radius * SCALE, 0, 2 * Math.PI);
-        ctx.strokeStyle = "rgba(251, 146, 60, 0.70)";
-        ctx.lineWidth = 3.5;
-        ctx.setLineDash([8, 6]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        const scrC = toScreen(circ.ptC);
-        const scrD = toScreen(circ.ptD);
-
-        ctx.fillStyle = "#facc15";
-        ctx.beginPath(); ctx.arc(scrC.x, scrC.y, 7, 0, 2*Math.PI); ctx.fill();
-        ctx.font = "bold 15px sans-serif";
-        ctx.fillText(`C(${circ.ptC.x.toFixed(1)})`, scrC.x - 22, scrC.y + 24);
-
-        ctx.fillStyle = "#4ade80";
-        ctx.beginPath(); ctx.arc(scrD.x, scrD.y, 7, 0, 2*Math.PI); ctx.fill();
-        ctx.fillText(`D(${circ.ptD.x.toFixed(1)})`, scrD.x - 22, scrD.y + 24);
-      }
-    }
-
-    // 足跡點
-    for (let pt of stampedPoints) {
-      const scr = toScreen(pt);
-      ctx.beginPath();
-      ctx.arc(scr.x, scr.y, 4.5, 0, 2 * Math.PI);
-      ctx.fillStyle = "rgba(74, 222, 128, 0.9)";
-      ctx.shadowColor = "#4ade80";
-      ctx.shadowBlur = 6;
-      ctx.fill();
-    }
-    ctx.shadowBlur = 0;
-
-    // 線條 PA 與 PB
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#38bdf8";
-    ctx.beginPath(); ctx.moveTo(scrP.x, scrP.y); ctx.lineTo(scrA.x, scrA.y); ctx.stroke();
-
-    ctx.strokeStyle = "#f87171";
-    ctx.beginPath(); ctx.moveTo(scrP.x, scrP.y); ctx.lineTo(scrB.x, scrB.y); ctx.stroke();
-
-    // 基準線 AB
-    ctx.strokeStyle = "#475569";
-    ctx.lineWidth = 1.8;
-    ctx.beginPath(); ctx.moveTo(scrA.x, scrA.y); ctx.lineTo(scrB.x, scrB.y); ctx.stroke();
-
-    const isUnlocked = chkUnlockAB.checked;
-
-    // 定點 A
-    ctx.fillStyle = "#38bdf8";
-    ctx.beginPath(); ctx.arc(scrA.x, scrA.y, 9, 0, 2 * Math.PI); ctx.fill();
-    ctx.font = "bold 18px sans-serif";
-    const strCoordA = mathA.x % 1 === 0 ? `${mathA.x}` : mathA.x.toFixed(1);
-    ctx.fillText(`A (${strCoordA}, 0)`, scrA.x - 35, scrA.y + 28);
-
-    if (isUnlocked) {
-      ctx.strokeStyle = "#38bdf8";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 3]);
-      ctx.beginPath(); ctx.arc(scrA.x, scrA.y, 16, 0, 2 * Math.PI); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.font = "bold 12px sans-serif";
-      ctx.fillStyle = "#7dd3fc";
-      ctx.fillText("⬌ 拖曳", scrA.x - 18, scrA.y + 45);
-    }
-
-    // 定點 B
-    ctx.fillStyle = "#f87171";
-    ctx.beginPath(); ctx.arc(scrB.x, scrB.y, 9, 0, 2 * Math.PI); ctx.fill();
-    ctx.font = "bold 18px sans-serif";
-    const strCoordB = mathB.x % 1 === 0 ? `${mathB.x}` : mathB.x.toFixed(1);
-    ctx.fillText(`B (${strCoordB}, 0)`, scrB.x - 28, scrB.y + 28);
-
-    if (isUnlocked) {
-      ctx.strokeStyle = "#f87171";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 3]);
-      ctx.beginPath(); ctx.arc(scrB.x, scrB.y, 16, 0, 2 * Math.PI); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.font = "bold 12px sans-serif";
-      ctx.fillStyle = "#fca5a5";
-      ctx.fillText("⬌ 拖曳", scrB.x - 18, scrB.y + 45);
-    }
-
-    // 比值計算
-    const dPA = dist(mathP, mathA);
-    const dPB = dist(mathP, mathB);
-    const ratio = dPB === 0 ? 999 : (dPA / dPB);
-    const tolerance = 0.05 * targetK;
-    const isHit = Math.abs(ratio - targetK) <= tolerance;
-
-    // 動點 P
-    ctx.fillStyle = isHit ? "#4ade80" : "#fbbf24";
-    ctx.shadowColor = isHit ? "#4ade80" : "#fbbf24";
-    ctx.shadowBlur = isHit ? 24 : 10;
-    ctx.beginPath(); ctx.arc(scrP.x, scrP.y, 14, 0, 2 * Math.PI); ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // 浮動 HUD
-    ctx.font = "bold 18px monospace";
-
-    // 1. PA 長度
-    const textPA = `PA: ${dPA.toFixed(2)}`;
-    const wPA = ctx.measureText(textPA).width + 18;
-    const posPA = { x: scrP.x - wPA - 18, y: scrP.y - 14 };
-    ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
-    ctx.strokeStyle = "#38bdf8";
-    ctx.lineWidth = 2;
-    drawRoundedRect(ctx, posPA.x, posPA.y, wPA, 34, 16, true, true);
-    ctx.fillStyle = "#38bdf8";
-    ctx.fillText(textPA, posPA.x + 9, posPA.y + 24);
-
-    // 2. PB 長度
-    const textPB = `PB: ${dPB.toFixed(2)}`;
-    const wPB = ctx.measureText(textPB).width + 18;
-    const posPB = { x: scrP.x + 18, y: scrP.y - 14 };
-    ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
-    ctx.strokeStyle = "#f87171";
-    ctx.lineWidth = 2;
-    drawRoundedRect(ctx, posPB.x, posPB.y, wPB, 34, 16, true, true);
-    ctx.fillStyle = "#f87171";
-    ctx.fillText(textPB, posPB.x + 9, posPB.y + 24);
-
-    // 3. 中央比值大格子
-    const textRatio = isHit 
-      ? `🎯 ${targetK.toFixed(1)} : 1` 
-      : `比值: ${ratio.toFixed(2)}`;
-    ctx.font = isHit ? "bold 24px sans-serif" : "bold 20px sans-serif";
-    const wRatio = ctx.measureText(textRatio).width + 28;
-    const posRatio = { x: scrP.x - wRatio / 2, y: scrP.y - 68 };
-
-    ctx.fillStyle = isHit ? "rgba(22, 101, 52, 0.96)" : "rgba(30, 41, 59, 0.94)";
-    ctx.strokeStyle = isHit ? "#4ade80" : "#64748b";
-    ctx.lineWidth = isHit ? 3 : 1.8;
-    if (isHit) {
-      ctx.shadowColor = "#22c55e";
-      ctx.shadowBlur = 20;
-    }
-    drawRoundedRect(ctx, posRatio.x, posRatio.y, wRatio, 44, 22, true, true);
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle = isHit ? "#86efac" : "#f1f5f9";
-    ctx.fillText(textRatio, posRatio.x + 14, posRatio.y + 30);
-  }
-
-  // 手勢事件
-  function onPointerDown(e) {
-    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    const rect = canvas.getBoundingClientRect();
-    const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    const scrP = toScreen(mathP);
-    const scrA = toScreen(mathA);
-    const scrB = toScreen(mathB);
-
-    if (activePointers.size === 1) {
-      if (chkUnlockAB.checked && dist(mouseScr, scrA) < 40) {
-        draggingTarget = 'A';
-        stampedPoints = [];
-      } else if (chkUnlockAB.checked && dist(mouseScr, scrB) < 40) {
-        draggingTarget = 'B';
-        stampedPoints = [];
-      } else if (dist(mouseScr, scrP) < 50) {
-        draggingTarget = 'P';
-      } else {
-        isPanningCanvas = true;
-        panStart = { x: e.clientX - originX, y: e.clientY - originY };
-      }
-      try { canvas.setPointerCapture(e.pointerId); } catch(err) {}
-    } else if (activePointers.size === 2) {
-      draggingTarget = null;
-      isPanningCanvas = false;
-      const pts = Array.from(activePointers.values());
-      initialPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      pinchStartScale = SCALE;
-    }
-  }
-
-  function onPointerMove(e) {
-    if (!activePointers.has(e.pointerId)) return;
-    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    if (activePointers.size >= 2 && initialPinchDistance) {
-      const pts = Array.from(activePointers.values());
-      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      const ratio = currentDist / initialPinchDistance;
-      SCALE = Math.max(25, Math.min(160, Math.round(pinchStartScale * ratio)));
-      draw();
-      return;
-    }
-
-    if (isPanningCanvas) {
-      originX = Math.round(e.clientX - panStart.x);
-      originY = Math.round(e.clientY - panStart.y);
-      draw();
-      return;
-    }
-
-    if (!draggingTarget) {
-      const rect = canvas.getBoundingClientRect();
-      const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      const scrP = toScreen(mathP);
-      const scrA = toScreen(mathA);
-      const scrB = toScreen(mathB);
-      if (chkUnlockAB.checked && (dist(mouseScr, scrA) < 40 || dist(mouseScr, scrB) < 40)) {
-        canvas.style.cursor = "ew-resize";
-      } else if (dist(mouseScr, scrP) < 50) {
-        canvas.style.cursor = "grab";
-      } else {
-        canvas.style.cursor = "crosshair";
-      }
-      return;
-    }
-
-    const rect = canvas.getBoundingClientRect();
-    const mouseScr = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    const mathM = toMath(mouseScr);
-
-    if (draggingTarget === 'P') {
-      canvas.style.cursor = "grabbing";
-      mathP = mathM;
-      checkHitAndStamp();
-    } else if (draggingTarget === 'A') {
-      canvas.style.cursor = "ew-resize";
-      let newX = Math.round(mathM.x * 2) / 2;
-      if (Math.abs(newX - mathB.x) < 0.5) {
-        newX = mathB.x + (newX < mathB.x ? -0.5 : 0.5);
-      }
-      mathA.x = newX;
-      mathA.y = 0.0;
-      checkHitAndStamp();
-    } else if (draggingTarget === 'B') {
-      canvas.style.cursor = "ew-resize";
-      let newX = Math.round(mathM.x * 2) / 2;
-      if (Math.abs(newX - mathA.x) < 0.5) {
-        newX = mathA.x + (newX < mathA.x ? -0.5 : 0.5);
-      }
-      mathB.x = newX;
-      mathB.y = 0.0;
-      checkHitAndStamp();
+      btnToggleCircle.classList.add("active");
+      btnToggleCircle.querySelector("span:last-child").textContent = "隱藏理論軌跡";
+      dot.style.background = "#22c55e";
+    } else {
+      btnToggleCircle.classList.remove("active");
+      btnToggleCircle.querySelector("span:last-child").textContent = "揭曉理論軌跡";
+      dot.style.background = "#ef4444";
     }
     draw();
-  }
+  });
 
-  function onPointerUp(e) {
-    if (e && e.pointerId) {
-      activePointers.delete(e.pointerId);
-      try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
-    }
-    if (activePointers.size === 0) {
-      draggingTarget = null;
-      isPanningCanvas = false;
-      initialPinchDistance = null;
-      canvas.style.cursor = "crosshair";
-    } else if (activePointers.size === 1) {
-      const remainingPt = Array.from(activePointers.values())[0];
-      panStart = { x: remainingPt.x - originX, y: remainingPt.y - originY };
-      initialPinchDistance = null;
-    }
-  }
-
-  canvas.addEventListener("pointerdown", onPointerDown);
-  window.addEventListener("pointermove", onPointerMove);
-  window.addEventListener("pointerup", onPointerUp);
-  window.addEventListener("pointercancel", onPointerUp);
+  btnClear.addEventListener("click", () => {
+    stampedPoints = [];
+    draw();
+  });
 
   btnZoomIn.addEventListener("click", () => {
-    SCALE = Math.min(160, Math.round(SCALE * 1.2));
+    SCALE = Math.min(SCALE * 1.25, 200);
     draw();
   });
   btnZoomOut.addEventListener("click", () => {
-    SCALE = Math.max(25, Math.round(SCALE / 1.2));
+    SCALE = Math.max(SCALE / 1.25, 25);
     draw();
   });
   btnZoomReset.addEventListener("click", () => {
@@ -1074,22 +1076,426 @@
     draw();
   });
 
-  chkUnlockAB.addEventListener("change", () => draw());
+  // 繪製格線與座標軸
+  function drawGrid() {
+    ctx.strokeStyle = "rgba(51, 65, 85, 0.4)";
+    ctx.lineWidth = 1;
 
-  btnClear.addEventListener("click", () => {
-    stampedPoints = [];
-    showTrueCircle = false;
-    btnToggleCircle.classList.remove("active");
+    const startX = Math.floor(toMathX(0));
+    const endX = Math.ceil(toMathX(width));
+    const startY = Math.floor(toMathY(height));
+    const endY = Math.ceil(toMathY(0));
+
+    for (let x = startX; x <= endX; x++) {
+      const sx = toScreenX(x);
+      ctx.beginPath();
+      ctx.moveTo(sx, 0);
+      ctx.lineTo(sx, height);
+      ctx.stroke();
+    }
+
+    for (let y = startY; y <= endY; y++) {
+      const sy = toScreenY(y);
+      ctx.beginPath();
+      ctx.moveTo(0, sy);
+      ctx.lineTo(width, sy);
+      ctx.stroke();
+    }
+
+    // 座標主軸
+    ctx.strokeStyle = "rgba(100, 116, 139, 0.8)";
+    ctx.lineWidth = 1.5;
+
+    // X 軸
+    ctx.beginPath();
+    ctx.moveTo(0, originY);
+    ctx.lineTo(width, originY);
+    ctx.stroke();
+
+    // Y 軸
+    ctx.beginPath();
+    ctx.moveTo(originX, 0);
+    ctx.lineTo(originX, height);
+    ctx.stroke();
+
+    // 軸標籤
+    ctx.fillStyle = "#64748b";
+    ctx.font = "11px monospace";
+    for (let x = startX; x <= endX; x++) {
+      if (x !== 0 && x % 2 === 0) {
+        ctx.fillText(x, toScreenX(x) - 4, originY + 15);
+      }
+    }
+  }
+
+  // 膠囊文字標籤
+  function drawPillBadge(text, x, y, borderColor, bgColor, textColor, fontSize = "14px") {
+    ctx.save();
+    ctx.font = `bold ${fontSize} -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    const textMetrics = ctx.measureText(text);
+    const textWidth = textMetrics.width;
+    const paddingX = 10;
+    const paddingY = 6;
+    const h = 26;
+    const w = textWidth + paddingX * 2;
+    const rx = x - w / 2;
+    const ry = y - h / 2;
+
+    ctx.fillStyle = bgColor;
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, w, h, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = textColor;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  function drawTextBadge(text, x, y, color = "#f8fafc", bg = "rgba(15,23,42,0.85)") {
+    ctx.save();
+    ctx.font = "bold 12px monospace";
+    const m = ctx.measureText(text);
+    const w = m.width + 10;
+    const h = 18;
+    ctx.fillStyle = bg;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x - w / 2, y - h / 2, w, h, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  // 主繪製函式
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    drawGrid();
+
+    const scA = toScreen(mathA.x, mathA.y);
+    const scB = toScreen(mathB.x, mathB.y);
+    const scP = toScreen(mathP.x, mathP.y);
+
+    const distPA = Math.hypot(mathP.x - mathA.x, mathP.y - mathA.y);
+    const distPB = Math.hypot(mathP.x - mathB.x, mathP.y - mathB.y);
+
+    // 命中判定：交叉相乘精度判定 |PA * n - PB * m| < 容許值
+    const isHit = Math.abs(distPA * targetN - distPB * targetM) < 0.16 * Math.max(1, (distPA + distPB) / 2);
+
+    // 命中自動留痕
+    if (chkAutoStamp.checked && isHit) {
+      const last = stampedPoints[stampedPoints.length - 1];
+      if (!last || Math.hypot(last.x - mathP.x, last.y - mathP.y) > 0.08) {
+        stampedPoints.push({ x: mathP.x, y: mathP.y });
+        if (stampedPoints.length > 500) stampedPoints.shift();
+      }
+    }
+
+    // 繪製歷史命中點痕跡 (綠色光暈)
+    if (stampedPoints.length > 0) {
+      ctx.save();
+      for (const pt of stampedPoints) {
+        const sc = toScreen(pt.x, pt.y);
+        ctx.fillStyle = "rgba(74, 222, 128, 0.75)";
+        ctx.shadowColor = "#4ade80";
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(sc.x, sc.y, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // 理論軌跡 (阿波羅尼斯圓 或 k=1 中垂線)
+    if (showTrueCircle) {
+      const locus = getApolloniusLocus();
+
+      if (locus.isLine) {
+        // 垂直中垂線
+        const screenLineX = toScreenX(locus.lineX);
+        ctx.save();
+        ctx.strokeStyle = "#fb923c";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]);
+        ctx.shadowColor = "rgba(251, 146, 60, 0.7)";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(screenLineX, 0);
+        ctx.lineTo(screenLineX, height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const scMid = toScreen(locus.lineX, 0);
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath();
+        ctx.arc(scMid.x, scMid.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        drawTextBadge(`中點 M(${locus.lineX.toFixed(1)}, 0) [中垂線]`, scMid.x, scMid.y + 24, "#fbbf24", "#0f172a");
+        ctx.restore();
+      } else {
+        // 阿波羅尼斯圓
+        const scCenter = toScreen(locus.ox, locus.oy);
+        const scRadius = locus.r * SCALE;
+
+        ctx.save();
+        ctx.strokeStyle = "#fb923c";
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([8, 6]);
+        ctx.shadowColor = "rgba(251, 146, 60, 0.6)";
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(scCenter.x, scCenter.y, scRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 內分點 C 與 外分點 D
+        const scC = toScreen(locus.cx, 0);
+        const scD = toScreen(locus.dx, 0);
+
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath(); ctx.arc(scC.x, scC.y, 5, 0, Math.PI * 2); ctx.fill();
+        drawTextBadge(`內分點 C(${locus.cx.toFixed(1)})`, scC.x, scC.y + 22, "#fbbf24", "#0f172a");
+
+        ctx.fillStyle = "#4ade80";
+        ctx.beginPath(); ctx.arc(scD.x, scD.y, 5, 0, Math.PI * 2); ctx.fill();
+        drawTextBadge(`外分點 D(${locus.dx.toFixed(1)})`, scD.x, scD.y + 22, "#4ade80", "#0f172a");
+        ctx.restore();
+      }
+    }
+
+    // 繪製線段 PA (藍色)
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(scP.x, scP.y);
+    ctx.lineTo(scA.x, scA.y);
+    ctx.stroke();
+
+    // 繪製線段 PB (紅色)
+    ctx.strokeStyle = "#f87171";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(scP.x, scP.y);
+    ctx.lineTo(scB.x, scB.y);
+    ctx.stroke();
+
+    // 繪製定點 A、B
+    const unlockAB = chkUnlockAB.checked;
+    
+    // 點 A
+    ctx.fillStyle = "#38bdf8";
+    ctx.shadowColor = "#38bdf8";
+    ctx.shadowBlur = unlockAB ? 16 : 8;
+    ctx.beginPath();
+    ctx.arc(scA.x, scA.y, unlockAB ? 9 : 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    drawTextBadge(`A (${mathA.x.toFixed(1)}, 0)`, scA.x, scA.y + 24, "#38bdf8");
+
+    // 點 B
+    ctx.fillStyle = "#f87171";
+    ctx.shadowColor = "#f87171";
+    ctx.shadowBlur = unlockAB ? 16 : 8;
+    ctx.beginPath();
+    ctx.arc(scB.x, scB.y, unlockAB ? 9 : 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    drawTextBadge(`B (${mathB.x.toFixed(1)}, 0)`, scB.x, scB.y + 24, "#f87171");
+
+    // 繪製動點 P (發光球)
+    ctx.save();
+    ctx.fillStyle = isHit ? "#4ade80" : "#fbbf24";
+    ctx.shadowColor = isHit ? "#4ade80" : "#fbbf24";
+    ctx.shadowBlur = isHit ? 24 : 14;
+    ctx.beginPath();
+    ctx.arc(scP.x, scP.y, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 動點兩側數值標籤 (PA 與 PB)
+    drawPillBadge(`PA: ${distPA.toFixed(2)}`, scP.x - 56, scP.y + 2, "#38bdf8", "rgba(15,23,42,0.9)", "#38bdf8", "12px");
+    drawPillBadge(`PB: ${distPB.toFixed(2)}`, scP.x + 56, scP.y + 2, "#f87171", "rgba(15,23,42,0.9)", "#f87171", "12px");
+
+    // 動點正上方：固定分母對齊法 (分母固定為 targetN，分子即時變化)
+    if (isHit) {
+      let matchText;
+      if (!isContinuousMode) {
+        matchText = (targetM === targetN)
+          ? `🎯 命中 1 / 1 (中垂線) !`
+          : `🎯 命中 ${targetM} / ${targetN} !`;
+      } else {
+        matchText = (targetM === targetN)
+          ? `🎯 命中 1.0 (1 / 1) [中垂線] !`
+          : `🎯 命中 ${targetK.toFixed(1)} (${targetM} / ${targetN}) !`;
+      }
+      drawPillBadge(matchText, scP.x, scP.y - 40, "#22c55e", "rgba(5, 46, 22, 0.94)", "#4ade80", "14px");
+    } else {
+      // 分母固定為 targetN，計算當前即時分子 (保留一位小數)
+      const currentNumerator = distPB > 0.0001 ? (distPA / distPB * targetN) : 99.9;
+      const numStr = (currentNumerator < 100) ? currentNumerator.toFixed(1) : ">99";
+      const ratioBadgeText = `PA/PB: ${numStr} / ${targetN}`;
+      drawPillBadge(ratioBadgeText, scP.x, scP.y - 40, "#64748b", "rgba(15, 23, 42, 0.9)", "#94a3b8", "13px");
+    }
+  }
+
+  // 觸控與滑鼠互動管理
+  function getEventPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
+
+  function handlePointerDown(e) {
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const pos = getEventPos(e);
+
+    // 雙指手勢縮放
+    if (activePointers.size === 2) {
+      draggingTarget = null;
+      isPanningCanvas = false;
+      const pts = Array.from(activePointers.values());
+      initialPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      pinchStartScale = SCALE;
+      return;
+    }
+
+    if (activePointers.size > 2) return;
+
+    // 檢查是否命中動點 P
+    const scP = toScreen(mathP.x, mathP.y);
+    if (Math.hypot(pos.x - scP.x, pos.y - scP.y) < 32) {
+      draggingTarget = "P";
+      return;
+    }
+
+    // 檢查是否命中解鎖後的 A 或 B 點
+    if (chkUnlockAB.checked) {
+      const scA = toScreen(mathA.x, mathA.y);
+      if (Math.hypot(pos.x - scA.x, pos.y - scA.y) < 28) {
+        draggingTarget = "A";
+        return;
+      }
+      const scB = toScreen(mathB.x, mathB.y);
+      if (Math.hypot(pos.x - scB.x, pos.y - scB.y) < 28) {
+        draggingTarget = "B";
+        return;
+      }
+    }
+
+    // 單指按住空白處平移畫布
+    isPanningCanvas = true;
+    panStart = { x: pos.x - originX, y: pos.y - originY };
+  }
+
+  function handlePointerMove(e) {
+    if (!activePointers.has(e.pointerId)) return;
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    // 雙指縮放處理
+    if (activePointers.size === 2 && initialPinchDistance) {
+      const pts = Array.from(activePointers.values());
+      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const ratio = currentDist / initialPinchDistance;
+      SCALE = Math.min(Math.max(pinchStartScale * ratio, 25), 200);
+      draw();
+      return;
+    }
+
+    const pos = getEventPos(e);
+
+    if (draggingTarget === "P") {
+      let mx = toMathX(pos.x);
+      let my = toMathY(pos.y);
+
+      // 幾何精密吸附
+      if (chkSnap.checked) {
+        const locus = getApolloniusLocus();
+
+        if (locus.isLine) {
+          const screenLineX = toScreenX(locus.lineX);
+          if (Math.abs(pos.x - screenLineX) < 18) {
+            mx = locus.lineX;
+          }
+        } else {
+          const screenCenter = toScreen(locus.ox, locus.oy);
+          const screenRadius = locus.r * SCALE;
+          const distToCenter = Math.hypot(pos.x - screenCenter.x, pos.y - screenCenter.y);
+          if (Math.abs(distToCenter - screenRadius) < 18 && distToCenter > 1) {
+            const angle = Math.atan2(pos.y - screenCenter.y, pos.x - screenCenter.x);
+            const snappedSx = screenCenter.x + Math.cos(angle) * screenRadius;
+            const snappedSy = screenCenter.y + Math.sin(angle) * screenRadius;
+            mx = toMathX(snappedSx);
+            my = toMathY(snappedSy);
+          }
+        }
+      }
+
+      mathP.x = mx;
+      mathP.y = my;
+      draw();
+    } else if (draggingTarget === "A") {
+      mathA.x = Math.round(toMathX(pos.x) * 10) / 10;
+      stampedPoints = [];
+      draw();
+    } else if (draggingTarget === "B") {
+      mathB.x = Math.round(toMathX(pos.x) * 10) / 10;
+      stampedPoints = [];
+      draw();
+    } else if (isPanningCanvas) {
+      originX = pos.x - panStart.x;
+      originY = pos.y - panStart.y;
+      draw();
+    }
+  }
+
+  function handlePointerUp(e) {
+    activePointers.delete(e.pointerId);
+    if (activePointers.size < 2) {
+      initialPinchDistance = null;
+    }
+    if (activePointers.size === 0) {
+      draggingTarget = null;
+      isPanningCanvas = false;
+    }
+  }
+
+  canvas.addEventListener("pointerdown", handlePointerDown);
+  window.addEventListener("pointermove", handlePointerMove);
+  window.addEventListener("pointerup", handlePointerUp);
+  canvas.addEventListener("pointercancel", handlePointerUp);
+
+  // 滑鼠滾輪縮放 (以游標處為中心)
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const pos = getEventPos(e);
+    const mathXBefore = toMathX(pos.x);
+    const mathYBefore = toMathY(pos.y);
+
+    const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
+    SCALE = Math.min(Math.max(SCALE * zoomFactor, 25), 200);
+
+    originX = pos.x - mathXBefore * SCALE;
+    originY = pos.y + mathYBefore * SCALE;
     draw();
-  });
+  }, { passive: false });
 
-  btnToggleCircle.addEventListener("click", () => {
-    showTrueCircle = !showTrueCircle;
-    btnToggleCircle.classList.toggle("active", showTrueCircle);
-    draw();
-  });
-
+  // 初始化
+  renderPinnedChips();
   resize();
+})();
 </script>
 </body>
 </html>
