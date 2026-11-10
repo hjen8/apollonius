@@ -50,11 +50,11 @@
   .title-group h1 { font-size: 1.25rem; font-weight: 800; color: #fff; letter-spacing: 0.6px; white-space: nowrap; }
   .title-group p { font-size: 0.9rem; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; }
 
-  /* 頂部獨立控制器外包層 (桌機橫向排版、手機自動折為上下兩層) */
+  /* 頂部獨立控制器外包層 (桌機微調靠右居中，折為兩列，徹底避開左上角「未知神秘曲線」字樣) */
   .top-control-wrapper {
     position: absolute;
-    top: 8px;
-    left: 50%;
+    top: 6px;
+    left: calc(50% + 55px);
     transform: translateX(-50%);
     display: flex;
     align-items: center;
@@ -66,16 +66,32 @@
 
   .center-controller {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 5px;
     background: #1e293b;
-    padding: 6px 16px;
-    border-radius: 40px;
+    padding: 6px 14px;
+    border-radius: 18px;
     border: 2px solid #3b82f6;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     white-space: nowrap;
     flex-shrink: 0;
     transition: all 0.2s ease;
+  }
+
+  .controller-row-1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .controller-row-2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
   
   .ratio-eq-label {
@@ -482,9 +498,11 @@
     .title-group h1 { font-size: 1.0rem; }
     .title-group p { display: none; }
 
-    /* 手機頂部：雙層緊湊架構 */
+    /* 手機頂部：雙列緊湊架構 */
     .top-control-wrapper {
       top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
       flex-direction: column;
       align-items: center;
       gap: 4px;
@@ -492,11 +510,17 @@
     }
     .center-controller {
       padding: 4px 8px;
-      gap: 4px;
-      border-radius: 20px;
+      gap: 3px;
+      border-radius: 14px;
       border-width: 1.5px;
       width: auto;
       max-width: 100%;
+    }
+    .controller-row-1 {
+      gap: 4px;
+    }
+    .controller-row-2 {
+      gap: 4px;
     }
     .ratio-eq-label { font-size: 0.85rem; }
 
@@ -588,45 +612,49 @@
 <!-- 頂部獨立控制器外包層 -->
 <div class="top-control-wrapper">
   <div class="center-controller">
-    <div class="ratio-eq-label">
-      <span>PA / PB =</span>
-    </div>
-
-    <!-- 分數拉桿群組 (鎖定模式下顯示) -->
-    <div id="fraction-controls" class="fraction-controls-group">
-      <!-- 分子滑桿 (1 ~ 10) -->
-      <div class="slider-unit">
-        <span class="slider-tag">分子</span>
-        <input type="range" id="slider-m" class="num-slider" min="1" max="10" step="1" value="3">
-        <b id="disp-m" class="val-num">3</b>
+    <!-- 第一列：PA / PB = 分子 / 分母 -->
+    <div class="controller-row-1">
+      <div class="ratio-eq-label">
+        <span>PA / PB =</span>
       </div>
 
-      <span class="fraction-divider">/</span>
+      <!-- 分數拉桿群組 (分子與分母) -->
+      <div id="fraction-controls" class="fraction-controls-group">
+        <div class="slider-unit">
+          <span class="slider-tag">分子</span>
+          <input type="range" id="slider-m" class="num-slider" min="1" max="10" step="1" value="3">
+          <b id="disp-m" class="val-num">3</b>
+        </div>
 
-      <!-- 分母滑桿 (1 ~ 10) -->
-      <div class="slider-unit">
-        <span class="slider-tag">分母</span>
-        <input type="range" id="slider-n" class="num-slider" min="1" max="10" step="1" value="7">
-        <b id="disp-n" class="val-num">7</b>
+        <span class="fraction-divider">/</span>
+
+        <div class="slider-unit">
+          <span class="slider-tag">分母</span>
+          <input type="range" id="slider-n" class="num-slider" min="1" max="10" step="1" value="7">
+          <b id="disp-n" class="val-num">7</b>
+        </div>
       </div>
     </div>
 
-    <!-- 數學等號與比值文字 -->
-    <span class="eq-ratio-text">= 比值</span>
+    <!-- 第二列：= 比值 [ 3 / 7 或 連續滑桿 ] [ 🔒 ] [ ⭐ 儲存 ] -->
+    <div class="controller-row-2">
+      <!-- 數學等號與比值文字 -->
+      <span class="eq-ratio-text">= 比值</span>
 
-    <!-- 分數模式靜態徽章 (3 / 7) -->
-    <div id="badge-fraction" class="result-badge">3 / 7</div>
+      <!-- 分數模式靜態徽章 (3 / 7) -->
+      <div id="badge-fraction" class="result-badge">3 / 7</div>
 
-    <!-- 解鎖模式下的連續滑桿 (0.1 步進，顯示為 3.2 (16 / 5)) -->
-    <div id="continuous-controls" class="continuous-slider-group" style="display: none;">
-      <input type="range" id="slider-continuous-k" class="continuous-slider" min="0.1" max="5.0" step="0.1" value="3.2">
-      <b id="disp-continuous-k" class="val-continuous">3.2 (16 / 5)</b>
+      <!-- 解鎖模式下的連續滑桿 (0.1 步進，顯示為 3.2 (16 / 5)) -->
+      <div id="continuous-controls" class="continuous-slider-group" style="display: none;">
+        <input type="range" id="slider-continuous-k" class="continuous-slider" min="0.1" max="5.0" step="0.1" value="3.2">
+        <b id="disp-continuous-k" class="val-continuous">3.2 (16 / 5)</b>
+      </div>
+
+      <!-- 🔒/🔓 解鎖連續比值按鈕 -->
+      <button id="btn-toggle-unlock-ratio" class="unlock-ratio-btn" title="解鎖為連續比值拉桿">🔒</button>
+
+      <button id="btn-pin-ratio" class="pin-btn" type="button">⭐ 儲存</button>
     </div>
-
-    <!-- 🔒/🔓 解鎖連續比值按鈕 -->
-    <button id="btn-toggle-unlock-ratio" class="unlock-ratio-btn" title="解鎖為連續比值拉桿">🔒</button>
-
-    <button id="btn-pin-ratio" class="pin-btn" type="button">⭐ 儲存</button>
   </div>
 
   <!-- 獨立的釘選比例膠囊區 (手機在第二列居中，絕不出鏡) -->
@@ -741,12 +769,10 @@
   let targetK = 3 / 7;
 
   // 使用者自訂儲存的比例清單
+  // 使用者自訂儲存的比例清單 (預設 2 個經典比例)
   let userPinnedList = [
-    { mode: 'fraction', m: 3, n: 7, label: '3 / 7' },
-    { mode: 'fraction', m: 1, n: 2, label: '1 / 2' },
     { mode: 'fraction', m: 2, n: 1, label: '2 / 1' },
-    { mode: 'fraction', m: 3, n: 2, label: '3 / 2' },
-    { mode: 'fraction', m: 1, n: 1, label: '1 / 1' }
+    { mode: 'fraction', m: 3, n: 2, label: '3 / 2' }
   ];
 
   // 動點 P (初始位置)
