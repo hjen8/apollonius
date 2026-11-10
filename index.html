@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>幾何動點軌跡 - 互動探索實驗室 (V7 緊湊任務膠囊版)</title>
+<title>幾何動點軌跡 - 互動探索實驗室 (V7 雙平台完美適配版)</title>
 <style>
   :root {
     --bg-color: #0b1120;
@@ -22,11 +22,14 @@
   
   html, body {
     width: 100vw;
-    height: 100dvh;
+    height: 100vh; /* Fallback for older Android Chrome */
+    height: 100dvh; /* Modern dynamic viewport height for iOS & Android */
     min-height: -webkit-fill-available;
     background-color: var(--bg-color);
     color: var(--text-primary);
     overflow: hidden;
+    overscroll-behavior: none; /* 徹底封殺安卓 Chrome 下拉重新整理 (Pull-to-refresh) */
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
@@ -297,12 +300,13 @@
   }
   .hint-toggle-btn:hover { background: #475569; color: #fff; }
   #hint-overlay.collapsed {
-    padding: 5px 12px;
-    border-radius: 20px;
+    padding: 4px 10px;
+    border-radius: 18px;
     max-width: fit-content;
     width: auto;
-    background: rgba(30, 41, 59, 0.90);
+    background: rgba(30, 41, 59, 0.92);
     white-space: nowrap;
+    border-color: #3b82f6;
   }
   #hint-overlay.collapsed .hint-title-full { display: none; }
   #hint-overlay.collapsed .hint-title-short { display: inline-flex; align-items: center; gap: 4px; }
@@ -425,7 +429,7 @@
   <div id="hint-overlay">
     <div class="hint-header" id="hint-header">
       <span class="hint-title-full">💡 <strong>探索任務</strong></span>
-      <span class="hint-title-short">💡 <strong>任務</strong></span>
+      <span class="hint-title-short"><strong>任務</strong></span>
       <button id="btn-toggle-hint" class="hint-toggle-btn" title="收合說明">✕</button>
     </div>
     <div id="hint-content" class="hint-content">
