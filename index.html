@@ -1354,6 +1354,13 @@
     drawPillBadge(`PA: ${distPA.toFixed(2)}`, scP.x - 56, scP.y + 2, "#38bdf8", "rgba(15,23,42,0.9)", "#38bdf8", "12px");
     drawPillBadge(`PB: ${distPB.toFixed(2)}`, scP.x + 56, scP.y + 2, "#f87171", "rgba(15,23,42,0.9)", "#f87171", "12px");
 
+    // PA/PB 下方、動點 P 正上方：P 點即時動態座標 P (x, y)
+    const cleanPx = Math.abs(mathP.x) < 0.05 ? 0 : mathP.x;
+    const cleanPy = Math.abs(mathP.y) < 0.05 ? 0 : mathP.y;
+    const pColor = isHit ? "#4ade80" : "#fbbf24";
+    const pCoordText = `P (${cleanPx.toFixed(1)}, ${cleanPy.toFixed(1)})`;
+    drawTextBadge(pCoordText, scP.x, scP.y - 23, pColor, "rgba(15, 23, 42, 0.9)");
+
     // 動點正上方：固定分母對齊法 (分母固定為 targetN，分子即時變化)
     if (isHit) {
       let matchText;
@@ -1366,13 +1373,13 @@
           ? `🎯 命中 1.0 (1 / 1) [中垂線] !`
           : `🎯 命中 ${targetK.toFixed(1)} (${targetM} / ${targetN}) !`;
       }
-      drawPillBadge(matchText, scP.x, scP.y - 40, "#22c55e", "rgba(5, 46, 22, 0.94)", "#4ade80", "14px");
+      drawPillBadge(matchText, scP.x, scP.y - 48, "#22c55e", "rgba(5, 46, 22, 0.94)", "#4ade80", "13px");
     } else {
       // 分母固定為 targetN，計算當前即時分子 (保留一位小數)
       const currentNumerator = distPB > 0.0001 ? (distPA / distPB * targetN) : 99.9;
       const numStr = (currentNumerator < 100) ? currentNumerator.toFixed(1) : ">99";
       const ratioBadgeText = `PA/PB: ${numStr} / ${targetN}`;
-      drawPillBadge(ratioBadgeText, scP.x, scP.y - 40, "#64748b", "rgba(15, 23, 42, 0.9)", "#94a3b8", "13px");
+      drawPillBadge(ratioBadgeText, scP.x, scP.y - 48, "#64748b", "rgba(15, 23, 42, 0.9)", "#94a3b8", "13px");
     }
   }
 
