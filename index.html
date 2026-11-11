@@ -1154,16 +1154,25 @@
     }
   }
 
-  // 膠囊文字標籤
-  function drawPillBadge(text, x, y, borderColor, bgColor, textColor, fontSize = "14px") {
+  // 膠囊文字標籤 (支援單一字串或多色段落陣列)
+  function drawPillBadge(textOrSegments, x, y, borderColor, bgColor, defaultTextColor, fontSize = "14px") {
     ctx.save();
     ctx.font = `bold ${fontSize} -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    const textMetrics = ctx.measureText(text);
-    const textWidth = textMetrics.width;
+
+    let totalTextWidth = 0;
+    const isSegments = Array.isArray(textOrSegments);
+
+    if (isSegments) {
+      for (const seg of textOrSegments) {
+        totalTextWidth += ctx.measureText(seg.text).width;
+      }
+    } else {
+      totalTextWidth = ctx.measureText(textOrSegments).width;
+    }
+
     const paddingX = 10;
-    const paddingY = 6;
     const h = 26;
-    const w = textWidth + paddingX * 2;
+    const w = totalTextWidth + paddingX * 2;
     const rx = x - w / 2;
     const ry = y - h / 2;
 
@@ -1175,21 +1184,33 @@
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = textColor;
-    ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, x, y);
+
+    if (isSegments) {
+      let currentX = rx + paddingX;
+      ctx.textAlign = "left";
+      for (const seg of textOrSegments) {
+        ctx.fillStyle = seg.color || defaultTextColor;
+        ctx.fillText(seg.text, currentX, y);
+        currentX += ctx.measureText(seg.text).width;
+      }
+    } else {
+      ctx.textAlign = "center";
+      ctx.fillStyle = defaultTextColor;
+      ctx.fillText(textOrSegments, x, y);
+    }
+
     ctx.restore();
   }
 
-  function drawTextBadge(text, x, y, color = "#f8fafc", bg = "rgba(15,23,42,0.85)") {
+  function drawTextBadge(text, x, y, color = "#f8fafc", bg = "rgba(15,23,42,0.85)", borderColor = null) {
     ctx.save();
     ctx.font = "bold 12px monospace";
     const m = ctx.measureText(text);
     const w = m.width + 10;
     const h = 18;
     ctx.fillStyle = bg;
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = borderColor || color;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(x - w / 2, y - h / 2, w, h, 6);
@@ -1354,14 +1375,15 @@
     drawPillBadge(`PA: ${distPA.toFixed(2)}`, scP.x - 56, scP.y + 2, "#38bdf8", "rgba(15,23,42,0.9)", "#38bdf8", "12px");
     drawPillBadge(`PB: ${distPB.toFixed(2)}`, scP.x + 56, scP.y + 2, "#f87171", "rgba(15,23,42,0.9)", "#f87171", "12px");
 
-    // PA/PB 下方、動點 P 正上方：P 點即時動態座標 P (x, y)
+    // PA/PB 下方、動點 P 正上方：P 點即時動態座標 P (x, y)，採用淺白灰 (#cbd5e1 / #475569) 柔和低調
     const cleanPx = Math.abs(mathP.x) < 0.05 ? 0 : mathP.x;
     const cleanPy = Math.abs(mathP.y) < 0.05 ? 0 : mathP.y;
-    const pColor = isHit ? "#4ade80" : "#fbbf24";
     const pCoordText = `P (${cleanPx.toFixed(1)}, ${cleanPy.toFixed(1)})`;
-    drawTextBadge(pCoordText, scP.x, scP.y - 23, pColor, "rgba(15, 23, 42, 0.9)");
+    const pTextColor = isHit ? "#4ade80" : "#cbd5e1";
+    const pBorderColor = isHit ? "#22c55e" : "#475569";
+    drawTextBadge(pCoordText, scP.x, scP.y - 23, pTextColor, "rgba(15, 23, 42, 0.9)", pBorderColor);
 
-    // 動點正上方：固定分母對齊法 (分母固定為 targetN，分子即時變化)
+    // 動點正上方：固定分母對齊法 (分母固定為 targetN，分子以亮黃色突出顯示)
     if (isHit) {
       let matchText;
       if (!isContinuousMode) {
@@ -1375,11 +1397,16 @@
       }
       drawPillBadge(matchText, scP.x, scP.y - 48, "#22c55e", "rgba(5, 46, 22, 0.94)", "#4ade80", "13px");
     } else {
-      // 分母固定為 targetN，計算當前即時分子 (保留一位小數)
+      // 分母固定為 targetN，分子以亮黃色 (#fbbf24) 顯式突顯
       const currentNumerator = distPB > 0.0001 ? (distPA / distPB * targetN) : 99.9;
       const numStr = (currentNumerator < 100) ? currentNumerator.toFixed(1) : ">99";
-      const ratioBadgeText = `PA/PB: ${numStr} / ${targetN}`;
-      drawPillBadge(ratioBadgeText, scP.x, scP.y - 48, "#64748b", "rgba(15, 23, 42, 0.9)", "#94a3b8", "13px");
+      
+      const ratioSegments = [
+        { text: "PA/PB: ", color: "#94a3b8" },
+        { text: numStr, color: "#fbbf24" },  // 亮黃色突出即時分子！
+        { text: ` / ${targetN}`, color: "#94a3b8" }
+      ];
+      drawPillBadge(ratioSegments, scP.x, scP.y - 48, "#64748b", "rgba(15, 23, 42, 0.9)", "#94a3b8", "13px");
     }
   }
 
