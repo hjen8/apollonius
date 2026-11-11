@@ -1,9 +1,9 @@
 # 🌲 Apollonius_Circle 歷史版本樹 (Project Version Tree)
 
 > **核心定位**：本文件與專案說明書 (`README.md` / `ANTIGRAVITY.md`) 具同等級核心地位。  
-> 📌 **當前身處分支**：`main` (HEAD -> `127d7f7`)  
+> 📌 **當前身處分支**：`main` (HEAD -> `18fe5fb`)  
 > 🚦 **工作區狀態**：✅ 工作目錄整潔 (Clean)  
-> 🕒 **最後更新時間**：`2026-11-11 01:10:44`
+> 🕒 **最後更新時間**：`2026-11-11 08:07:29`
 
 ---
 
@@ -26,7 +26,9 @@ flowchart TD
     n_1bfc99a(["6. 【功能】V13 雙模態全響應網頁版正式發.."]):::default
     n_e6e8bc3(["7. 【修復】V14 命中誤差均勻收斂拔除多重.."]):::default
     n_d2e2b42(["8. 【功能】V15 頂部控制器分折兩列避開左.."]):::default
-    n_127d7f7(["9. 【文件】建立專案 SOP ANTIGRA.."]):::current
+    n_127d7f7(["9. 【文件】建立專案 SOP ANTIGRA.."]):::default
+    n_6b66723(["10. 【文件】建立 VERSION_TREE..."]):::default
+    n_18fe5fb(["11. 【功能】V16 於動點 PA/PB 下方.."]):::current
     n_dd774c2 --> n_8d1e47c
     n_8d1e47c --> n_e014cd9
     n_e014cd9 --> n_d5b2657
@@ -35,6 +37,8 @@ flowchart TD
     n_1bfc99a --> n_e6e8bc3
     n_e6e8bc3 --> n_d2e2b42
     n_d2e2b42 --> n_127d7f7
+    n_127d7f7 --> n_6b66723
+    n_6b66723 --> n_18fe5fb
 ```
 
 ---
@@ -44,7 +48,9 @@ flowchart TD
 
 | 編號 (No.) | 存檔ID (Hash) | 提交時間 | 分支/標籤 | 說明 (Commit Message) | 時光機指令 (前往此版本) |
 | :---: | :---: | :---: | :---: | :--- | :--- |
-| **9** | `127d7f7` | 2026-11-11 01:10 |  `HEAD -> main, origin/main` | 【文件】建立專案 SOP ANTIGRAVITY.md、README.md、QR Code 與 V1~V15 歷史歸檔 | `git checkout 127d7f7` |
+| **11** | `18fe5fb` | 2026-11-11 08:07 |  `HEAD -> main, origin/main` | 【功能】V16 於動點 PA/PB 下方新增 P 點即時動態座標 P x, y | `git checkout 18fe5fb` |
+| **10** | `6b66723` | 2026-11-11 01:10 |  | 【文件】建立 VERSION_TREE.md 歷史版本樹母檔 | `git checkout 6b66723` |
+| **9** | `127d7f7` | 2026-11-11 01:10 |  | 【文件】建立專案 SOP ANTIGRAVITY.md、README.md、QR Code 與 V1~V15 歷史歸檔 | `git checkout 127d7f7` |
 | **8** | `d2e2b42` | 2026-11-11 00:51 |  | 【功能】V15 頂部控制器分折兩列避開左上副標題，預設釘選比例精簡為2/1與3/2 | `git checkout d2e2b42` |
 | **7** | `e6e8bc3` | 2026-11-11 00:35 |  | 【修復】V14 命中誤差均勻收斂拔除多重虛影條帶、加強手機吸附手感、副標題改為定值 | `git checkout e6e8bc3` |
 | **6** | `1bfc99a` | 2026-11-11 00:22 |  | 【功能】V13 雙模態全響應網頁版正式發布 0.1平滑步進/兩整數比並陳/固定分母對齊/拉桿防抖動/雙平台相容 | `git checkout 1bfc99a` |
@@ -63,7 +69,9 @@ flowchart TD
 
 ### 4. 終端完整拓撲圖 (Terminal ASCII Graph)
 ```text
-* 127d7f7 (HEAD -> main, origin/main) docs: 建立專案 SOP ANTIGRAVITY.md、README.md、QR Code 與 V1~V15 歷史歸檔
+* 18fe5fb (HEAD -> main, origin/main) feat: V16 於動點 PA/PB 下方新增 P 點即時動態座標 P (x, y)
+* 6b66723 docs: 建立 VERSION_TREE.md 歷史版本樹母檔
+* 127d7f7 docs: 建立專案 SOP ANTIGRAVITY.md、README.md、QR Code 與 V1~V15 歷史歸檔
 * d2e2b42 feat: V15 頂部控制器分折兩列避開左上副標題，預設釘選比例精簡為2/1與3/2
 * e6e8bc3 fix: V14 命中誤差均勻收斂拔除多重虛影條帶、加強手機吸附手感、副標題改為定值
 * 1bfc99a feat: V13 雙模態全響應網頁版正式發布 (0.1平滑步進/兩整數比並陳/固定分母對齊/拉桿防抖動/雙平台相容)
